@@ -4,70 +4,59 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>KickForge — mor-tilki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <!--
-  KickForge
-  ---------
-  Sonunda bitti. Vercel backend'i, refresh tokenlar, OAuth derken
-  epey uğraştık ama değdi.
+  KickForge v8 (final)
+  --------------------
+  Artık takipçi ve izleyici sayıları /api/stats üzerinden geliyor.
+  Tarayıcıdaki CORS belasından kurtulduk.
 
-  Notlar kendime:
-  - Sohbet iframe'inin üstüne tıklanamaz bir katman koydum ki insanlar
-    yanlışlıkla içine tıklayıp 403 yemesin. Yazmak için aşağıdaki
-    kendi composer'ımızı kullanıyorlar.
-  - Renklerde tamamen siyah yerine #121114 gibi hafif sıcak bir antrasit
-    kullandım. Daha az "yapay zeka uygulaması" gibi duruyor.
-  - Çevrimdışı ekranını hafifçe eğdim (rotate -0.5deg). Mükemmel simetri
-    bazen ruhsuz duruyor.
+  Not: Sohbet iframe'inin üstüne görünmez bir katman attım.
+  Çünkü insanlar tıklayınca Kick'in 403 sayfasına düşüyordu,
+  artık sadece aşağıdaki kendi yazma alanımızı kullanıyorlar.
+
+  Tasarımda mükemmel simetri yok. Köşeler farklı, offline ekranı
+  hafif yamuk. İnsan işi böyle duruyor bence.
 
   - h.
 -->
 
 <style>
 /* ─────────────────────────────────────────────────────────────
-   Değişkenler - Renk paleti ve animasyon süreleri
+   Renkler ve Değişkenler
    ───────────────────────────────────────────────────────────── */
 :root {
   color-scheme: dark;
 
-  /* Ana renkler - Kick moruna yakın ama daha soft */
   --primary:      #D0BCFF;
   --on-primary:   #381E72;
   --primary-c:    #4F378B;
-  --on-primary-c: #EADDFF;
   
-  /* Yüzey renkleri (Antrasit tonları) */
   --bg:           #121114;
   --surface-1:    #1A181E;
   --surface-2:    #221F28;
   --surface-3:    #2C2833;
-  --surface-4:    #383240;
-
-  /* Metin ve Çizgiler */
+  
   --text-main:    #E8E4EC;
   --text-muted:   #A59EAF;
   --border:       #3E3845;
   --border-soft:  #2C2833;
 
-  /* Durum Renkleri */
   --live-red:     #F2B8B5;
   --live-bg:      #4A1D1D;
   --success:      #A5D6A7;
   --success-bg:   #1B4A1F;
   --error:        #FFB4AB;
 
-  /* Animasyon Eğrileri */
+  /* Animasyon eğrileri */
   --ease-out:     cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-spring:  cubic-bezier(0.175, 0.885, 0.32, 1.275);
   
-  /* Fontlar */
-  --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
-  
-  /* Köşe Yuvarlamaları - Hepsini aynı yapmıyoruz ki insan eli değmiş gibi dursun */
-  --r-sm: 8px;
-  --r-md: 14px 16px 14px 18px;
-  --r-lg: 24px 20px 26px 22px;
+  --font-sans:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -84,7 +73,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Dokulu arka plan - düz siyahı kırar */
+/* Arka plan dokusu - düz siyahı kırar */
 body::before {
   content: '';
   position: fixed;
@@ -97,23 +86,19 @@ body::before {
 
 ::selection { background: var(--primary-c); color: white; }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb {
-  background: var(--surface-3);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover { background: var(--surface-4); }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); }
 
 /* ─────────────────────────────────────────────────────────────
-   Üst Bar (Header)
+   Header & Navigasyon
    ───────────────────────────────────────────────────────────── */
 .appbar {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(18, 17, 20, 0.75);
+  background: rgba(18, 17, 20, 0.8);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border-bottom: 1px solid var(--border-soft);
@@ -131,7 +116,7 @@ body::before {
 .brand {
   font-weight: 800;
   font-size: 18px;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   color: var(--primary);
   display: flex;
   align-items: center;
@@ -143,6 +128,7 @@ body::before {
   font-size: 13px;
   color: var(--text-muted);
   font-family: var(--font-mono);
+  letter-spacing: 0;
 }
 
 .header-actions {
@@ -152,7 +138,7 @@ body::before {
   gap: 12px;
 }
 
-/* Canlı Durum Çipi */
+/* Durum Çipi */
 .status-chip {
   display: inline-flex;
   align-items: center;
@@ -167,10 +153,7 @@ body::before {
   color: var(--text-muted);
   transition: all 0.3s var(--ease-out);
 }
-.status-chip .dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--text-muted);
-}
+.status-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
 .status-chip[data-state="live"] {
   background: var(--live-bg);
   border-color: rgba(242, 184, 181, 0.3);
@@ -181,7 +164,6 @@ body::before {
   box-shadow: 0 0 8px var(--live-red);
   animation: pulse 1.8s infinite;
 }
-
 @keyframes pulse {
   0% { box-shadow: 0 0 0 0 rgba(242, 184, 181, 0.5); }
   70% { box-shadow: 0 0 0 6px rgba(242, 184, 181, 0); }
@@ -204,41 +186,14 @@ body::before {
   transition: all 0.2s var(--ease-spring);
 }
 .btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: #E0D4FF; box-shadow: 0 4px 16px rgba(208, 188, 255, 0.2); }
+.btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--surface-3); border-color: var(--text-muted); }
+.btn-icon { padding: 8px; border-radius: 50%; background: transparent; color: var(--text-muted); border: 1px solid transparent; }
+.btn-icon:hover { background: var(--surface-3); color: var(--text-main); }
 
-.btn-primary {
-  background: var(--primary);
-  color: var(--on-primary);
-}
-.btn-primary:hover {
-  background: #E0D4FF;
-  box-shadow: 0 4px 16px rgba(208, 188, 255, 0.2);
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--text-main);
-  border: 1px solid var(--border);
-}
-.btn-outline:hover {
-  background: var(--surface-3);
-  border-color: var(--text-muted);
-}
-
-.btn-icon {
-  padding: 8px;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px solid transparent;
-}
-.btn-icon:hover {
-  background: var(--surface-3);
-  color: var(--text-main);
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Sekmeler
-   ───────────────────────────────────────────────────────────── */
+/* Sekmeler */
 .tabs {
   max-width: 1440px;
   margin: 0 auto;
@@ -264,7 +219,6 @@ body::before {
 }
 .tab:hover { color: var(--text-main); }
 .tab[aria-selected="true"] { color: var(--primary); }
-
 .tab::after {
   content: '';
   position: absolute;
@@ -278,7 +232,7 @@ body::before {
 .tab[aria-selected="true"]::after { transform: scaleX(1); }
 
 /* ─────────────────────────────────────────────────────────────
-   Ana Yerleşim (Grid)
+   Ana Yerleşim
    ───────────────────────────────────────────────────────────── */
 .main-container {
   max-width: 1440px;
@@ -287,11 +241,7 @@ body::before {
 }
 
 .panel { display: none; }
-.panel.active {
-  display: block;
-  animation: fadeUp 0.4s var(--ease-out) forwards;
-}
-
+.panel.active { display: block; animation: fadeUp 0.4s var(--ease-out) forwards; }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -308,17 +258,18 @@ body::before {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Oynatıcı ve Çevrimdışı Ekranı
+   Oynatıcı & Çevrimdışı
    ───────────────────────────────────────────────────────────── */
 .player-wrapper {
   position: relative;
   width: 100%;
   aspect-ratio: 16/9;
   background: #000;
-  border-radius: var(--r-md);
+  /* İnsan dokunuşu: Asimetrik köşeler */
+  border-radius: 18px 14px 20px 16px;
   overflow: hidden;
   border: 1px solid var(--border);
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6);
 }
 
 .player-wrapper iframe {
@@ -338,9 +289,9 @@ body::before {
   justify-content: center;
   text-align: center;
   padding: 32px;
-  /* İnsan dokunuşu: hafif eğim */
-  transform: scale(0.98) rotate(-0.5deg);
-  border-radius: var(--r-md);
+  /* Hafif eğim, mükemmel simetriyi bozar */
+  transform: scale(0.98) rotate(-0.6deg);
+  border-radius: 18px 14px 20px 16px;
   border: 1px dashed var(--border);
 }
 .offline-screen.active { display: flex; }
@@ -365,6 +316,7 @@ body::before {
   color: var(--text-muted);
   max-width: 400px;
   margin-bottom: 24px;
+  font-size: 14px;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -377,7 +329,7 @@ body::before {
   margin-top: 16px;
   padding: 16px;
   background: var(--surface-1);
-  border-radius: var(--r-lg);
+  border-radius: 16px 20px 14px 18px;
   border: 1px solid var(--border);
 }
 
@@ -385,12 +337,8 @@ body::before {
   width: 48px; height: 48px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary-c), var(--surface-3));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 18px;
-  color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 18px; color: var(--primary);
   border: 2px solid var(--border);
   overflow: hidden;
 }
@@ -398,39 +346,24 @@ body::before {
 
 .channel-info { flex: 1; min-width: 0; }
 .channel-title {
-  font-size: 16px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; gap: 6px;
 }
 .channel-sub {
-  font-size: 13px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-family: var(--font-mono);
-  margin-top: 2px;
+  font-size: 13px; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--font-mono); margin-top: 2px;
 }
 
 .channel-stats {
-  display: flex;
-  gap: 20px;
-  text-align: right;
+  display: flex; gap: 20px; text-align: right;
 }
 .stat-box span {
-  display: block;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
+  display: block; font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-muted); font-family: var(--font-mono);
 }
 .stat-box strong {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-main);
+  font-size: 16px; font-weight: 700; color: var(--text-main);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -438,13 +371,11 @@ body::before {
    ───────────────────────────────────────────────────────────── */
 .chat-container {
   background: var(--surface-1);
-  border-radius: var(--r-md);
+  border-radius: 20px 16px 18px 14px;
   border: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
+  display: flex; flex-direction: column;
   height: calc(100vh - 180px);
-  min-height: 500px;
-  max-height: 800px;
+  min-height: 500px; max-height: 800px;
   overflow: hidden;
 }
 
@@ -452,186 +383,117 @@ body::before {
   padding: 12px 16px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border-soft);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
-  font-weight: 600;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px; font-weight: 600;
 }
 
 .chat-status {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--surface-3);
-  color: var(--text-muted);
+  font-family: var(--font-mono); font-size: 11px;
+  padding: 3px 8px; border-radius: 6px;
+  background: var(--surface-3); color: var(--text-muted);
 }
-.chat-status.logged-in {
-  background: var(--success-bg);
-  color: var(--success);
-}
+.chat-status.logged-in { background: var(--success-bg); color: var(--success); }
 
 .chat-body {
-  flex: 1;
-  position: relative;
-  background: var(--bg);
+  flex: 1; position: relative; background: var(--bg);
 }
 
-/* İframe'in üstüne görünmez bir katman koyuyoruz ki tıklanamasın */
+/* İframe'in üstüne tıklanamaz katman */
 .chat-body iframe {
-  position: absolute;
-  inset: 0;
+  position: absolute; inset: 0;
   width: 100%; height: 100%;
-  border: 0;
-  pointer-events: none; 
+  border: 0; pointer-events: none; 
 }
 .chat-body::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  background: transparent;
+  content: ''; position: absolute; inset: 0; z-index: 2; background: transparent;
 }
 
-/* Mesaj Yazma Alanı (Composer) */
+/* Mesaj Yazma */
 .chat-composer {
   padding: 12px;
   background: var(--surface-2);
   border-top: 1px solid var(--border-soft);
-  display: flex;
-  gap: 8px;
+  display: flex; gap: 8px;
 }
 
 .chat-composer input {
-  flex: 1;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--surface-1);
-  color: var(--text-main);
-  font-family: inherit;
-  font-size: 13.5px;
-  outline: none;
+  flex: 1; padding: 10px 14px;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface-1); color: var(--text-main);
+  font-family: inherit; font-size: 13.5px; outline: none;
   transition: border-color 0.2s;
 }
-.chat-composer input:focus {
-  border-color: var(--primary);
-}
-.chat-composer input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.chat-composer input:focus { border-color: var(--primary); }
+.chat-composer input:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .chat-composer button {
-  padding: 0 16px;
-  border-radius: 10px;
-  border: none;
-  background: var(--primary);
-  color: var(--on-primary);
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
+  padding: 0 16px; border-radius: 10px; border: none;
+  background: var(--primary); color: var(--on-primary);
+  font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
-.chat-composer button:disabled {
-  background: var(--surface-3);
-  color: var(--text-muted);
-  cursor: not-allowed;
-}
-.chat-composer button:hover:not(:disabled) {
-  background: #E0D4FF;
-}
+.chat-composer button:disabled { background: var(--surface-3); color: var(--text-muted); cursor: not-allowed; }
+.chat-composer button:hover:not(:disabled) { background: #E0D4FF; }
 
 /* Giriş Uyarısı */
 .login-hint {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px;
-  background: var(--surface-3);
-  font-size: 12px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  border-top: 1px solid var(--border-soft);
+  display: none; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px; background: var(--surface-3);
+  font-size: 12px; font-family: var(--font-mono);
+  color: var(--text-muted); border-top: 1px solid var(--border-soft);
 }
 .login-hint.active { display: flex; }
-.login-hint a {
-  color: var(--primary);
-  text-decoration: none;
-  font-weight: 600;
-}
+.login-hint a { color: var(--primary); text-decoration: none; font-weight: 600; }
 .login-hint a:hover { text-decoration: underline; }
 
 /* ─────────────────────────────────────────────────────────────
-   Diğer Sekmeler (Boş Ekranlar)
+   Boş Ekranlar (Arşiv, Klipler)
    ───────────────────────────────────────────────────────────── */
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 80px 24px;
-  background: var(--surface-1);
-  border: 1px dashed var(--border);
-  border-radius: var(--r-lg);
-  margin-top: 24px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 80px 24px;
+  background: var(--surface-1); border: 1px dashed var(--border);
+  border-radius: 24px 20px 22px 18px; margin-top: 24px;
 }
-.empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.7; }
 .empty-state h2 { font-size: 20px; margin-bottom: 8px; }
-.empty-state p { color: var(--text-muted); max-width: 400px; margin-bottom: 24px; }
+.empty-state p { color: var(--text-muted); max-width: 400px; margin-bottom: 24px; font-size: 14px; }
 
 /* ─────────────────────────────────────────────────────────────
-   Toast (Bildirim)
+   Toast
    ───────────────────────────────────────────────────────────── */
 .toast {
-  position: fixed;
-  bottom: 24px; right: 24px;
-  background: var(--surface-3);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: 14px 10px 12px 16px;
+  padding: 16px; display: flex; align-items: flex-start; gap: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  transform: translateY(100px);
-  opacity: 0;
+  transform: translateY(100px); opacity: 0;
   transition: all 0.4s var(--ease-spring);
-  z-index: 1000;
-  max-width: 350px;
+  z-index: 1000; max-width: 350px;
 }
-.toast.show {
-  transform: translateY(0);
-  opacity: 1;
-}
+.toast.show { transform: translateY(0); opacity: 1; }
 .toast-icon {
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  background: var(--primary-c);
-  color: var(--primary);
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--primary-c); color: var(--primary);
   display: flex; align-items: center; justify-content: center;
-  font-weight: bold;
-  flex-shrink: 0;
+  font-weight: bold; flex-shrink: 0;
 }
 .toast.error .toast-icon { background: var(--live-bg); color: var(--error); }
 .toast-content h4 { font-size: 14px; margin-bottom: 2px; }
 .toast-content p { font-size: 12.5px; color: var(--text-muted); line-height: 1.4; }
 
-/* Mobil Düzeltmeleri */
 @media (max-width: 640px) {
   .channel-bar { flex-wrap: wrap; }
   .channel-stats { width: 100%; justify-content: space-between; text-align: left; margin-top: 8px; }
   .brand span { display: none; }
   .appbar-inner { padding: 12px 16px; }
   .main-container { padding: 16px; }
+  .chat-container { height: 500px; }
 }
 </style>
 </head>
 <body>
 
-<!-- Üst Bar -->
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
@@ -644,7 +506,6 @@ body::before {
         <span id="statusText">Kontrol ediliyor</span>
       </div>
       
-      <!-- Giriş / Çıkış Butonları -->
       <button id="loginBtn" class="btn btn-primary" onclick="window.location.href='/api/auth'" style="display: none;">
         Kick ile Giriş Yap
       </button>
@@ -668,11 +529,10 @@ body::before {
 
 <main class="main-container">
   
-  <!-- CANLI YAYIN SEKMESİ -->
+  <!-- CANLI YAYIN -->
   <section id="panel-live" class="panel active">
     <div class="live-grid">
       
-      <!-- Sol Kolon: Oynatıcı ve Bilgi -->
       <div class="player-section">
         <div class="player-wrapper">
           <iframe id="kickPlayer" src="https://player.kick.com/mor-tilki?muted=true" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>
@@ -707,7 +567,6 @@ body::before {
         </div>
       </div>
       
-      <!-- Sağ Kolon: Sohbet -->
       <div class="chat-section">
         <div class="chat-container">
           <div class="chat-header">
@@ -716,17 +575,14 @@ body::before {
           </div>
           
           <div class="chat-body">
-            <!-- Sadece okuma amaçlı iframe -->
             <iframe id="chatIframe" src="https://kick.com/popout/mor-tilki/chat"></iframe>
           </div>
           
-          <!-- Yazma alanı -->
           <div class="chat-composer">
             <input type="text" id="chatInput" placeholder="Mesaj yaz..." maxlength="500" autocomplete="off" disabled />
             <button id="sendBtn" disabled>Gönder</button>
           </div>
           
-          <!-- Giriş yapılmamışsa uyarı -->
           <div id="loginHint" class="login-hint">
             Sohbete yazmak için <a href="/api/auth">Kick ile giriş yapmalısın</a>.
           </div>
@@ -736,7 +592,7 @@ body::before {
     </div>
   </section>
 
-  <!-- ARŞİV SEKMESİ -->
+  <!-- ARŞİV -->
   <section id="panel-archive" class="panel">
     <div class="empty-state">
       <div class="icon">📼</div>
@@ -746,7 +602,7 @@ body::before {
     </div>
   </section>
 
-  <!-- KLİPLER SEKMESİ -->
+  <!-- KLİPLER -->
   <section id="panel-clips" class="panel">
     <div class="empty-state">
       <div class="icon">🎬</div>
@@ -756,7 +612,7 @@ body::before {
     </div>
   </section>
 
-  <!-- HAKKINDA SEKMESİ -->
+  <!-- HAKKINDA -->
   <section id="panel-about" class="panel">
     <div class="empty-state" style="align-items: flex-start; text-align: left; border-style: solid;">
       <h2>KickForge Hakkında</h2>
@@ -768,7 +624,7 @@ body::before {
         // Vercel Serverless, OAuth 2.1 (PKCE) ve Refresh Token mekanizmaları kullanılarak geliştirilmiştir.
       </p>
       
-      <div style="padding: 16px; background: var(--surface-2); border-radius: var(--r-md); border: 1px solid var(--border); width: 100%;">
+      <div style="padding: 16px; background: var(--surface-2); border-radius: 12px; border: 1px solid var(--border); width: 100%;">
         <h3 style="font-size: 14px; margin-bottom: 8px;">Sistem Durumu</h3>
         <div style="display: flex; gap: 24px; font-size: 13px; color: var(--text-muted);">
           <div>API Bağlantısı: <span id="apiStatus" style="color: var(--success); font-weight: bold;">Sağlıklı</span></div>
@@ -780,7 +636,7 @@ body::before {
 
 </main>
 
-<!-- Toast Bildirimi -->
+<!-- Toast -->
 <div id="toast" class="toast">
   <div class="toast-icon">!</div>
   <div class="toast-content">
@@ -791,15 +647,13 @@ body::before {
 
 <script>
 /**
- * KickForge Frontend Mantığı
- * Son güncelleme: Çalışıyor! (Şükür)
+ * KickForge Frontend
+ * V8 - Stats API entegre edildi.
  */
 
-// --- Global Değişkenler ---
 let isLoggedIn = false;
 let broadcasterId = null;
 
-// --- DOM Elementleri ---
 const el = {
   statusChip: document.getElementById('statusChip'),
   statusText: document.getElementById('statusText'),
@@ -827,17 +681,15 @@ const el = {
   toastMessage: document.getElementById('toastMessage')
 };
 
-// --- Başlatma ---
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   checkAuthStatus();
   fetchChannelStatus();
   
-  // 30 saniyede bir yayın durumunu güncelle
+  // Her 30 saniyede bir istatistikleri yenile
   setInterval(fetchChannelStatus, 30000);
 });
 
-// --- Sekmeler ---
 function initTabs() {
   const tabs = document.querySelectorAll('.tab');
   const panels = document.querySelectorAll('.panel');
@@ -853,7 +705,6 @@ function initTabs() {
   });
 }
 
-// --- Yetkilendirme Kontrolü ---
 async function checkAuthStatus() {
   try {
     const res = await fetch('/api/me');
@@ -891,55 +742,50 @@ async function checkAuthStatus() {
   }
 }
 
-// --- Çıkış Yap ---
 async function handleLogout() {
   try {
     await fetch('/api/logout', { method: 'POST' });
     window.location.reload();
   } catch (err) {
-    showToast('Hata', 'Çıkış yapılamadı. Lütfen tekrar dene.', true);
+    showToast('Hata', 'Çıkış yapılamadı.', true);
   }
 }
 
-// --- Yayın ve Kanal Durumu ---
+/* 
+ * İşte sihir burada: Kendi sunucumuzdaki /api/stats'a istek atıyoruz.
+ * Artık CORS derdi yok.
+ */
 async function fetchChannelStatus() {
   try {
-    // CORS engeline takılmamak için proxy kullanıyoruz
-    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://kick.com/api/v2/channels/mor-tilki');
-    const res = await fetch(proxyUrl);
+    const res = await fetch('/api/stats');
+    if (!res.ok) throw new Error('Sunucu yanıt vermedi');
+    
     const data = await res.json();
     
-    if (!data || !data.user) throw new Error('Veri alınamadı');
+    if (data.broadcasterId) broadcasterId = data.broadcasterId;
     
-    // Broadcaster ID'yi kaydet (mesaj gönderirken lazım)
-    broadcasterId = data.user.id;
-    
-    // Profil resmi
-    if (data.user.profile_pic) {
-      el.channelAvatar.innerHTML = `<img src="${data.user.profile_pic}" alt="Mor Tilki" onerror="this.parentNode.textContent='MT'">`;
+    // Profil Fotoğrafı
+    if (data.profilePic) {
+      el.channelAvatar.innerHTML = `<img src="${data.profilePic}" alt="Mor Tilki" onerror="this.parentNode.textContent='MT'">`;
     }
     
-    // Doğrulanmış rozeti
-    if (data.user.verified) {
-      el.verifiedIcon.style.display = 'inline-block';
+    // Onay Rozeti
+    if (data.verified) el.verifiedIcon.style.display = 'inline-block';
+    
+    // Takipçi Sayısı
+    if (data.followersCount !== undefined) {
+      el.followerCount.textContent = data.followersCount.toLocaleString('tr-TR');
     }
     
-    // Takipçi sayısı
-    if (data.user.followers_count) {
-      el.followerCount.textContent = data.user.followers_count.toLocaleString('tr-TR');
-    }
-    
-    // Canlı Yayın Durumu
-    const isLive = data.livestream && data.livestream.is_live;
-    
-    if (isLive) {
+    // Canlı Durumu
+    if (data.isLive) {
       el.statusChip.dataset.state = 'live';
       el.statusText.textContent = 'Canlı';
       el.kickPlayer.style.display = 'block';
       el.offlineScreen.classList.remove('active');
       
-      el.channelTitle.textContent = data.livestream.session_title || 'Canlı Yayın';
-      el.viewerCount.textContent = (data.livestream.viewer_count || 0).toLocaleString('tr-TR');
+      el.channelTitle.textContent = data.sessionTitle || 'Canlı Yayın';
+      el.viewerCount.textContent = (data.viewerCount || 0).toLocaleString('tr-TR');
     } else {
       el.statusChip.dataset.state = 'offline';
       el.statusText.textContent = 'Çevrimdışı';
@@ -951,16 +797,15 @@ async function fetchChannelStatus() {
     }
     
   } catch (err) {
-    console.warn('Durum çekilemedi (CORS veya ağ hatası):', err);
+    console.warn('Durum çekilemedi:', err);
     el.statusText.textContent = 'Durum Alınamadı';
-    // Hata olsa bile oynatıcıyı açık bırak, kendi çevrimdışı ekranını göstersin
+    // Hata olsa da oynatıcıyı açık bırak
     el.kickPlayer.style.display = 'block';
     el.offlineScreen.classList.remove('active');
-    el.channelTitle.textContent = 'Yayın durumu kontrol edilemiyor';
+    el.channelTitle.textContent = 'Bağlantı hatası...';
   }
 }
 
-// --- Mesaj Gönderme ---
 el.sendBtn.addEventListener('click', sendMessage);
 el.chatInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') sendMessage();
@@ -971,11 +816,10 @@ async function sendMessage() {
   if (!content) return;
   
   if (!broadcasterId) {
-    showToast('Hata', 'Kanal bilgisi henüz yüklenmedi. Lütfen bir saniye sonra tekrar dene.', true);
+    showToast('Hata', 'Kanal bilgisi henüz yüklenmedi.', true);
     return;
   }
   
-  // Butonu kilitle
   el.sendBtn.disabled = true;
   el.sendBtn.textContent = '...';
   
@@ -983,18 +827,13 @@ async function sendMessage() {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content: content,
-        broadcaster_id: broadcasterId
-      })
+      body: JSON.stringify({ content: content, broadcaster_id: broadcasterId })
     });
     
     if (res.ok) {
       el.chatInput.value = '';
-      // Başarılıysa sessizce temizle
     } else if (res.status === 401) {
-      // Token süresi dolmuş, refresh denendi ama başarısız oldu
-      showToast('Oturum Süresi Doldu', 'Lütfen tekrar giriş yapın.', true);
+      showToast('Oturum Bitti', 'Lütfen tekrar giriş yapın.', true);
       el.loginBtn.style.display = 'inline-flex';
       el.logoutBtn.style.display = 'none';
       el.chatInput.disabled = true;
@@ -1011,17 +850,13 @@ async function sendMessage() {
   }
 }
 
-// --- Toast Bildirim Sistemi ---
 let toastTimeout;
 function showToast(title, message, isError = false) {
   el.toastTitle.textContent = title;
   el.toastMessage.textContent = message;
   
-  if (isError) {
-    el.toast.classList.add('error');
-  } else {
-    el.toast.classList.remove('error');
-  }
+  if (isError) el.toast.classList.add('error');
+  else el.toast.classList.remove('error');
   
   el.toast.classList.add('show');
   
