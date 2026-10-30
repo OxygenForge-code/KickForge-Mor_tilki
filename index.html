@@ -8,63 +8,65 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-<!--
-  KickForge v8 (final)
-  --------------------
-  Artık takipçi ve izleyici sayıları /api/stats üzerinden geliyor.
-  Tarayıcıdaki CORS belasından kurtulduk.
-
-  Not: Sohbet iframe'inin üstüne görünmez bir katman attım.
-  Çünkü insanlar tıklayınca Kick'in 403 sayfasına düşüyordu,
-  artık sadece aşağıdaki kendi yazma alanımızı kullanıyorlar.
-
-  Tasarımda mükemmel simetri yok. Köşeler farklı, offline ekranı
-  hafif yamuk. İnsan işi böyle duruyor bence.
-
-  - h.
--->
-
 <style>
-/* ─────────────────────────────────────────────────────────────
-   Renkler ve Değişkenler
-   ───────────────────────────────────────────────────────────── */
+
 :root {
   color-scheme: dark;
 
-  --primary:      #D0BCFF;
-  --on-primary:   #381E72;
-  --primary-c:    #4F378B;
+  /* M3 Mor Paleti */
+  --md-primary: #D0BCFF;
+  --md-on-primary: #381E72;
+  --md-primary-container: #4F378B;
+  --md-on-primary-container: #EADDFF;
   
-  --bg:           #121114;
-  --surface-1:    #1A181E;
-  --surface-2:    #221F28;
-  --surface-3:    #2C2833;
-  
-  --text-main:    #E8E4EC;
-  --text-muted:   #A59EAF;
-  --border:       #3E3845;
-  --border-soft:  #2C2833;
+  --md-secondary: #CCC2DC;
+  --md-on-secondary: #332D41;
+  --md-secondary-container: #4A4458;
+  --md-on-secondary-container: #E8DEF8;
 
-  --live-red:     #F2B8B5;
-  --live-bg:      #4A1D1D;
-  --success:      #A5D6A7;
-  --success-bg:   #1B4A1F;
-  --error:        #FFB4AB;
+  /* Yüzeyler (Surface) */
+  --md-surface: #141218;
+  --md-surface-dim: #141218;
+  --md-surface-container-lowest: #0F0D13;
+  --md-surface-container-low: #1D1B20;
+  --md-surface-container: #211F26;
+  --md-surface-container-high: #2B2930;
+  --md-surface-container-highest: #36343B;
 
-  /* Animasyon eğrileri */
-  --ease-out:     cubic-bezier(0.2, 0.8, 0.2, 1);
-  --ease-spring:  cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Metinler ve Çizgiler */
+  --md-on-surface: #E6E0E9;
+  --md-on-surface-variant: #CAC4D0;
+  --md-outline: #938F99;
+  --md-outline-variant: #49454F;
+
+  /* Durum Renkleri */
+  --md-error: #F2B8B5;
+  --md-on-error: #601410;
+  --md-error-container: #8C1D18;
+  --md-success: #B5D6C0;
+  --md-success-container: #1B4A1F;
+
+  /* Animasyon (M3 Easing) */
+  --md-ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-ease-standard: cubic-bezier(0.2, 0, 0, 1);
   
-  --font-sans:    'Inter', system-ui, sans-serif;
-  --font-mono:    'JetBrains Mono', monospace;
+  /* Fontlar */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Şekiller (Asimetrik insan dokunuşu) */
+  --shape-sm: 12px 10px 14px 10px;
+  --shape-md: 16px 14px 18px 14px;
+  --shape-lg: 24px 20px 26px 22px;
+  --shape-pill: 999px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
 body {
-  background-color: var(--bg);
-  color: var(--text-main);
+  background-color: var(--md-surface);
+  color: var(--md-on-surface);
   font-family: var(--font-sans);
   font-size: 14.5px;
   line-height: 1.6;
@@ -73,95 +75,67 @@ body {
   overflow-x: hidden;
 }
 
-/* Arka plan dokusu - düz siyahı kırar */
+/* Arka plan dokusu */
 body::before {
   content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.03;
+  position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-::selection { background: var(--primary-c); color: white; }
+::selection { background: var(--md-primary-container); color: var(--md-on-primary-container); }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border); }
+::-webkit-scrollbar-track { background: var(--md-surface); }
+::-webkit-scrollbar-thumb { background: var(--md-outline-variant); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--md-outline); }
 
 /* ─────────────────────────────────────────────────────────────
-   Header & Navigasyon
+   Header (Top App Bar)
    ───────────────────────────────────────────────────────────── */
 .appbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(18, 17, 20, 0.8);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border-bottom: 1px solid var(--border-soft);
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(20, 18, 24, 0.85);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-bottom: 1px solid var(--md-outline-variant);
 }
 
 .appbar-inner {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 12px 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  max-width: 1440px; margin: 0 auto; padding: 12px 24px;
+  display: flex; align-items: center; gap: 16px;
 }
 
 .brand {
-  font-weight: 800;
-  font-size: 18px;
-  letter-spacing: -0.04em;
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-weight: 800; font-size: 18px; letter-spacing: -0.04em;
+  color: var(--md-primary); display: flex; align-items: center; gap: 8px;
   user-select: none;
 }
 .brand span {
-  font-weight: 500;
-  font-size: 13px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  letter-spacing: 0;
+  font-weight: 500; font-size: 13px; color: var(--md-on-surface-variant);
+  font-family: var(--font-mono); letter-spacing: 0;
 }
 
-.header-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.header-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 
-/* Durum Çipi */
+/* M3 Durum Çipi */
 .status-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 14px;
-  border-radius: 20px;
-  background: var(--surface-3);
-  border: 1px solid var(--border);
-  font-size: 12px;
-  font-weight: 600;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  transition: all 0.3s var(--ease-out);
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 14px; border-radius: var(--shape-pill);
+  background: var(--md-surface-container-high);
+  border: 1px solid var(--md-outline-variant);
+  font-size: 12px; font-weight: 600; font-family: var(--font-mono);
+  color: var(--md-on-surface-variant);
+  transition: all 0.3s var(--md-ease-standard);
 }
-.status-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+.status-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--md-outline); }
 .status-chip[data-state="live"] {
-  background: var(--live-bg);
+  background: var(--md-error-container);
   border-color: rgba(242, 184, 181, 0.3);
-  color: var(--live-red);
+  color: var(--md-error);
 }
 .status-chip[data-state="live"] .dot {
-  background: var(--live-red);
-  box-shadow: 0 0 8px var(--live-red);
+  background: var(--md-error);
+  box-shadow: 0 0 8px var(--md-error);
   animation: pulse 1.8s infinite;
 }
 @keyframes pulse {
@@ -170,219 +144,165 @@ body::before {
   100% { box-shadow: 0 0 0 0 rgba(242, 184, 181, 0); }
 }
 
-/* Butonlar */
+/* M3 Butonlar */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 12px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  text-decoration: none;
-  transition: all 0.2s var(--ease-spring);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 8px 20px; border-radius: var(--shape-pill);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; text-decoration: none;
+  transition: all 0.2s var(--md-ease-emphasized);
+  position: relative; overflow: hidden;
 }
 .btn:active { transform: scale(0.96); }
-.btn-primary { background: var(--primary); color: var(--on-primary); }
-.btn-primary:hover { background: #E0D4FF; box-shadow: 0 4px 16px rgba(208, 188, 255, 0.2); }
-.btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
-.btn-outline:hover { background: var(--surface-3); border-color: var(--text-muted); }
-.btn-icon { padding: 8px; border-radius: 50%; background: transparent; color: var(--text-muted); border: 1px solid transparent; }
-.btn-icon:hover { background: var(--surface-3); color: var(--text-main); }
 
-/* Sekmeler */
+.btn-primary {
+  background: var(--md-primary); color: var(--md-on-primary);
+}
+.btn-primary:hover {
+  background: #E0D4FF; box-shadow: 0 2px 12px rgba(208, 188, 255, 0.25);
+}
+
+.btn-tonal {
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+.btn-tonal:hover { background: #5C546D; }
+
+.btn-outline {
+  background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline);
+}
+.btn-outline:hover { background: rgba(208, 188, 255, 0.08); }
+
+.btn-icon {
+  padding: 8px; border-radius: 50%; background: transparent;
+  color: var(--md-on-surface-variant); border: 1px solid transparent;
+}
+.btn-icon:hover { background: var(--md-surface-container-high); color: var(--md-on-surface); }
+
+/* ─────────────────────────────────────────────────────────────
+   Sekmeler (M3 Primary Tabs)
+   ───────────────────────────────────────────────────────────── */
 .tabs {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--border-soft);
+  max-width: 1440px; margin: 0 auto; padding: 0 24px;
+  display: flex; gap: 4px; border-bottom: 1px solid var(--md-outline-variant);
   overflow-x: auto;
 }
 .tabs::-webkit-scrollbar { display: none; }
 
 .tab {
-  padding: 14px 16px;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  position: relative;
-  transition: color 0.2s;
+  padding: 14px 16px; background: transparent; border: none;
+  color: var(--md-on-surface-variant); font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; position: relative; transition: color 0.2s;
 }
-.tab:hover { color: var(--text-main); }
-.tab[aria-selected="true"] { color: var(--primary); }
+.tab:hover { color: var(--md-on-surface); }
+.tab[aria-selected="true"] { color: var(--md-primary); }
 .tab::after {
-  content: '';
-  position: absolute;
-  bottom: -1px; left: 16px; right: 16px;
-  height: 2px;
-  background: var(--primary);
-  border-radius: 2px 2px 0 0;
-  transform: scaleX(0);
-  transition: transform 0.3s var(--ease-out);
+  content: ''; position: absolute; bottom: -1px; left: 16px; right: 16px;
+  height: 3px; background: var(--md-primary); border-radius: 3px 3px 0 0;
+  transform: scaleX(0); transition: transform 0.3s var(--md-ease-emphasized);
 }
 .tab[aria-selected="true"]::after { transform: scaleX(1); }
 
 /* ─────────────────────────────────────────────────────────────
    Ana Yerleşim
    ───────────────────────────────────────────────────────────── */
-.main-container {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 24px;
-}
+.main-container { max-width: 1440px; margin: 0 auto; padding: 24px; }
 
 .panel { display: none; }
-.panel.active { display: block; animation: fadeUp 0.4s var(--ease-out) forwards; }
+.panel.active { display: block; animation: fadeUp 0.4s var(--md-ease-emphasized) forwards; }
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .live-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
-  gap: 24px;
-  align-items: start;
+  display: grid; grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 24px; align-items: start;
 }
-@media (max-width: 1024px) {
-  .live-grid { grid-template-columns: 1fr; }
-}
+@media (max-width: 1024px) { .live-grid { grid-template-columns: 1fr; } }
 
 /* ─────────────────────────────────────────────────────────────
-   Oynatıcı & Çevrimdışı
+   Oynatıcı ve Çevrimdışı
    ───────────────────────────────────────────────────────────── */
 .player-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16/9;
-  background: #000;
-  /* İnsan dokunuşu: Asimetrik köşeler */
-  border-radius: 18px 14px 20px 16px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6);
+  position: relative; width: 100%; aspect-ratio: 16/9;
+  background: #000; border-radius: var(--shape-md);
+  overflow: hidden; border: 1px solid var(--md-outline-variant);
+  box-shadow: 0 12px 32px -8px rgba(0,0,0,0.7);
 }
-
-.player-wrapper iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
-  border: 0;
-}
+.player-wrapper iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
 .offline-screen {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, var(--surface-2), var(--surface-1));
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 32px;
-  /* Hafif eğim, mükemmel simetriyi bozar */
-  transform: scale(0.98) rotate(-0.6deg);
-  border-radius: 18px 14px 20px 16px;
-  border: 1px dashed var(--border);
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at center, var(--md-surface-container), var(--md-surface-container-low));
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 32px;
+  transform: scale(0.98) rotate(-0.6deg); /* İnsan dokunuşu */
+  border-radius: var(--shape-md); border: 1px dashed var(--md-outline-variant);
 }
 .offline-screen.active { display: flex; }
 
-.offline-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  animation: float 4s ease-in-out infinite;
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
+.offline-icon { font-size: 48px; margin-bottom: 16px; animation: float 4s ease-in-out infinite; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-.offline-screen h2 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--primary);
-  margin-bottom: 8px;
-}
-.offline-screen p {
-  color: var(--text-muted);
-  max-width: 400px;
-  margin-bottom: 24px;
-  font-size: 14px;
-}
+.offline-screen h2 { font-size: 24px; font-weight: 700; color: var(--md-primary); margin-bottom: 8px; }
+.offline-screen p { color: var(--md-on-surface-variant); max-width: 400px; margin-bottom: 24px; font-size: 14px; }
 
 /* ─────────────────────────────────────────────────────────────
    Kanal Bilgi Çubuğu
    ───────────────────────────────────────────────────────────── */
 .channel-bar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 16px;
-  padding: 16px;
-  background: var(--surface-1);
-  border-radius: 16px 20px 14px 18px;
-  border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 16px; padding: 16px;
+  background: var(--md-surface-container-low);
+  border-radius: var(--shape-lg); border: 1px solid var(--md-outline-variant);
 }
 
 .avatar {
-  width: 48px; height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-c), var(--surface-3));
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--md-primary-container), var(--md-surface-container-highest));
   display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 18px; color: var(--primary);
-  border: 2px solid var(--border);
-  overflow: hidden;
+  font-weight: 800; font-size: 18px; color: var(--md-primary);
+  border: 2px solid var(--md-outline-variant); overflow: hidden;
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .channel-info { flex: 1; min-width: 0; }
-.channel-title {
-  font-size: 16px; font-weight: 700;
-  display: flex; align-items: center; gap: 6px;
-}
+.channel-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 .channel-sub {
-  font-size: 13px; color: var(--text-muted);
+  font-size: 13px; color: var(--md-on-surface-variant);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-family: var(--font-mono); margin-top: 2px;
 }
 
-.channel-stats {
-  display: flex; gap: 20px; text-align: right;
-}
+.channel-stats { display: flex; gap: 20px; text-align: right; margin-left: auto; }
 .stat-box span {
   display: block; font-size: 10.5px; text-transform: uppercase;
-  letter-spacing: 0.05em; color: var(--text-muted); font-family: var(--font-mono);
+  letter-spacing: 0.05em; color: var(--md-on-surface-variant); font-family: var(--font-mono);
 }
-.stat-box strong {
-  font-size: 16px; font-weight: 700; color: var(--text-main);
+.stat-box strong { font-size: 16px; font-weight: 700; color: var(--md-on-surface); }
+
+/* Takip Et Butonu (Kanal çubuğu içinde) */
+.follow-btn {
+  padding: 6px 16px; font-size: 12px; margin-left: 12px;
+  transition: all 0.3s var(--md-ease-emphasized);
+}
+.follow-btn.followed {
+  background: var(--md-success-container); color: var(--md-success); border-color: transparent;
 }
 
 /* ─────────────────────────────────────────────────────────────
    Sohbet Alanı
    ───────────────────────────────────────────────────────────── */
 .chat-container {
-  background: var(--surface-1);
-  border-radius: 20px 16px 18px 14px;
-  border: 1px solid var(--border);
+  background: var(--md-surface-container-low);
+  border-radius: var(--shape-md); border: 1px solid var(--md-outline-variant);
   display: flex; flex-direction: column;
-  height: calc(100vh - 180px);
-  min-height: 500px; max-height: 800px;
-  overflow: hidden;
+  height: calc(100vh - 180px); min-height: 500px; max-height: 800px; overflow: hidden;
 }
 
 .chat-header {
-  padding: 12px 16px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border-soft);
+  padding: 12px 16px; background: var(--md-surface-container);
+  border-bottom: 1px solid var(--md-outline-variant);
   display: flex; align-items: center; justify-content: space-between;
   font-size: 13px; font-weight: 600;
 }
@@ -390,101 +310,92 @@ body::before {
 .chat-status {
   font-family: var(--font-mono); font-size: 11px;
   padding: 3px 8px; border-radius: 6px;
-  background: var(--surface-3); color: var(--text-muted);
+  background: var(--md-surface-container-highest); color: var(--md-on-surface-variant);
 }
-.chat-status.logged-in { background: var(--success-bg); color: var(--success); }
+.chat-status.logged-in { background: var(--md-success-container); color: var(--md-success); }
 
-.chat-body {
-  flex: 1; position: relative; background: var(--bg);
-}
+.chat-body { flex: 1; position: relative; background: var(--md-surface); }
 
-/* İframe'in üstüne tıklanamaz katman */
-.chat-body iframe {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  border: 0; pointer-events: none; 
-}
-.chat-body::after {
-  content: ''; position: absolute; inset: 0; z-index: 2; background: transparent;
-}
+/* İframe üzerine tıklanamaz katman */
+.chat-body iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
+.chat-body::after { content: ''; position: absolute; inset: 0; z-index: 2; background: transparent; }
 
 /* Mesaj Yazma */
 .chat-composer {
-  padding: 12px;
-  background: var(--surface-2);
-  border-top: 1px solid var(--border-soft);
+  padding: 12px; background: var(--md-surface-container);
+  border-top: 1px solid var(--md-outline-variant);
   display: flex; gap: 8px;
 }
 
 .chat-composer input {
-  flex: 1; padding: 10px 14px;
-  border-radius: 10px; border: 1px solid var(--border);
-  background: var(--surface-1); color: var(--text-main);
+  flex: 1; padding: 10px 16px; border-radius: var(--shape-pill);
+  border: 1px solid var(--md-outline-variant);
+  background: var(--md-surface); color: var(--md-on-surface);
   font-family: inherit; font-size: 13.5px; outline: none;
   transition: border-color 0.2s;
 }
-.chat-composer input:focus { border-color: var(--primary); }
+.chat-composer input:focus { border-color: var(--md-primary); }
 .chat-composer input:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .chat-composer button {
-  padding: 0 16px; border-radius: 10px; border: none;
-  background: var(--primary); color: var(--on-primary);
+  padding: 0 20px; border-radius: var(--shape-pill); border: none;
+  background: var(--md-primary); color: var(--md-on-primary);
   font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
-.chat-composer button:disabled { background: var(--surface-3); color: var(--text-muted); cursor: not-allowed; }
+.chat-composer button:disabled { background: var(--md-surface-container-highest); color: var(--md-on-surface-variant); cursor: not-allowed; }
 .chat-composer button:hover:not(:disabled) { background: #E0D4FF; }
 
 /* Giriş Uyarısı */
 .login-hint {
   display: none; align-items: center; justify-content: center; gap: 8px;
-  padding: 10px; background: var(--surface-3);
+  padding: 10px; background: var(--md-surface-container-high);
   font-size: 12px; font-family: var(--font-mono);
-  color: var(--text-muted); border-top: 1px solid var(--border-soft);
+  color: var(--md-on-surface-variant); border-top: 1px solid var(--md-outline-variant);
 }
 .login-hint.active { display: flex; }
-.login-hint a { color: var(--primary); text-decoration: none; font-weight: 600; }
+.login-hint a { color: var(--md-primary); text-decoration: none; font-weight: 600; }
 .login-hint a:hover { text-decoration: underline; }
 
 /* ─────────────────────────────────────────────────────────────
-   Boş Ekranlar (Arşiv, Klipler)
+   Boş Ekranlar
    ───────────────────────────────────────────────────────────── */
 .empty-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; padding: 80px 24px;
-  background: var(--surface-1); border: 1px dashed var(--border);
-  border-radius: 24px 20px 22px 18px; margin-top: 24px;
+  background: var(--md-surface-container-low); border: 1px dashed var(--md-outline-variant);
+  border-radius: var(--shape-lg); margin-top: 24px;
 }
 .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.7; }
 .empty-state h2 { font-size: 20px; margin-bottom: 8px; }
-.empty-state p { color: var(--text-muted); max-width: 400px; margin-bottom: 24px; font-size: 14px; }
+.empty-state p { color: var(--md-on-surface-variant); max-width: 400px; margin-bottom: 24px; font-size: 14px; }
 
 /* ─────────────────────────────────────────────────────────────
    Toast
    ───────────────────────────────────────────────────────────── */
 .toast {
   position: fixed; bottom: 24px; right: 24px;
-  background: var(--surface-3); border: 1px solid var(--border);
-  border-radius: 14px 10px 12px 16px;
-  padding: 16px; display: flex; align-items: flex-start; gap: 12px;
+  background: var(--md-surface-container-high); border: 1px solid var(--md-outline-variant);
+  border-radius: var(--shape-md); padding: 16px; display: flex; align-items: flex-start; gap: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   transform: translateY(100px); opacity: 0;
-  transition: all 0.4s var(--ease-spring);
+  transition: all 0.4s var(--md-ease-emphasized);
   z-index: 1000; max-width: 350px;
 }
 .toast.show { transform: translateY(0); opacity: 1; }
 .toast-icon {
   width: 24px; height: 24px; border-radius: 50%;
-  background: var(--primary-c); color: var(--primary);
+  background: var(--md-primary-container); color: var(--md-primary);
   display: flex; align-items: center; justify-content: center;
   font-weight: bold; flex-shrink: 0;
 }
-.toast.error .toast-icon { background: var(--live-bg); color: var(--error); }
+.toast.error .toast-icon { background: var(--md-error-container); color: var(--md-error); }
 .toast-content h4 { font-size: 14px; margin-bottom: 2px; }
-.toast-content p { font-size: 12.5px; color: var(--text-muted); line-height: 1.4; }
+.toast-content p { font-size: 12.5px; color: var(--md-on-surface-variant); line-height: 1.4; }
 
 @media (max-width: 640px) {
   .channel-bar { flex-wrap: wrap; }
-  .channel-stats { width: 100%; justify-content: space-between; text-align: left; margin-top: 8px; }
+  .channel-stats { width: 100%; justify-content: space-between; text-align: left; margin-top: 8px; margin-left: 0; }
+  .follow-btn { margin-left: auto; }
   .brand span { display: none; }
   .appbar-inner { padding: 12px 16px; }
   .main-container { padding: 16px; }
@@ -550,10 +461,19 @@ body::before {
           <div class="channel-info">
             <div class="channel-title">
               Mor Tilki
-              <svg id="verifiedIcon" style="display:none;" width="14" height="14" viewBox="0 0 24 24" fill="var(--primary)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <svg id="verifiedIcon" style="display:none;" width="14" height="14" viewBox="0 0 24 24" fill="var(--md-primary)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </div>
             <div id="channelTitle" class="channel-sub">Yayın bilgisi yükleniyor...</div>
           </div>
+          
+          <!-- Yeni Takip Et Butonu -->
+          <button id="followBtn" class="btn btn-outline follow-btn" style="display: none;" onclick="handleFollow()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 21s-7.5-4.7-10-9.3c-1.8-3.2 0.3-7.2 4-7.2 2 0 3.5 1.2 4.5 2.5 1-1.3 2.5-2.5 4.5-2.5 3.7 0 5.8 4 4 7.2C19.5 16.3 12 21 12 21z"/>
+            </svg>
+            <span>Takip Et</span>
+          </button>
+
           <div class="channel-stats">
             <div class="stat-box">
               <span>İzleyici</span>
@@ -598,7 +518,7 @@ body::before {
       <div class="icon">📼</div>
       <h2>Arşiv API'den Çekilemiyor</h2>
       <p>Kick'in herkese açık API'sinde geçmiş yayınları listeleyen bir uç nokta bulunmuyor. Eski yayınlara göz atmak için aşağıdaki butonu kullanabilirsin.</p>
-      <a href="https://kick.com/mor-tilki/videos" target="_blank" class="btn btn-outline">Kick'te Arşivi Aç</a>
+      <a href="https://kick.com/mor-tilki/videos" target="_blank" class="btn btn-tonal">Kick'te Arşivi Aç</a>
     </div>
   </section>
 
@@ -608,7 +528,7 @@ body::before {
       <div class="icon">🎬</div>
       <h2>Klipler API'de Yok</h2>
       <p>Aynı şekilde, klipleri listelemek için de resmi bir API ucu bulunmuyor. Mor Tilki'nin kliplerine doğrudan Kick üzerinden ulaşabilirsin.</p>
-      <a href="https://kick.com/mor-tilki/clips" target="_blank" class="btn btn-outline">Kick'te Klipleri Aç</a>
+      <a href="https://kick.com/mor-tilki/clips" target="_blank" class="btn btn-tonal">Kick'te Klipleri Aç</a>
     </div>
   </section>
 
@@ -620,14 +540,14 @@ body::before {
         Bu proje, <strong>mor-tilki</strong> yayınlarını daha temiz ve modern bir arayüzde izlemek için yapıldı. 
         Kick'in kendi oynatıcısını ve sohbet altyapısını kullanır. 
       </p>
-      <p style="margin-bottom: 24px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
+      <p style="margin-bottom: 24px; font-family: var(--font-mono); font-size: 12px; color: var(--md-on-surface-variant);">
         // Vercel Serverless, OAuth 2.1 (PKCE) ve Refresh Token mekanizmaları kullanılarak geliştirilmiştir.
       </p>
       
-      <div style="padding: 16px; background: var(--surface-2); border-radius: 12px; border: 1px solid var(--border); width: 100%;">
+      <div style="padding: 16px; background: var(--md-surface-container); border-radius: var(--shape-sm); border: 1px solid var(--md-outline-variant); width: 100%;">
         <h3 style="font-size: 14px; margin-bottom: 8px;">Sistem Durumu</h3>
-        <div style="display: flex; gap: 24px; font-size: 13px; color: var(--text-muted);">
-          <div>API Bağlantısı: <span id="apiStatus" style="color: var(--success); font-weight: bold;">Sağlıklı</span></div>
+        <div style="display: flex; gap: 24px; font-size: 13px; color: var(--md-on-surface-variant);">
+          <div>API Bağlantısı: <span id="apiStatus" style="color: var(--md-success); font-weight: bold;">Sağlıklı</span></div>
           <div>Oturum: <span id="authStatus" style="font-weight: bold;">Kontrol ediliyor...</span></div>
         </div>
       </div>
@@ -647,34 +567,31 @@ body::before {
 
 <script>
 /**
- * KickForge Frontend
- * V8 - Stats API entegre edildi.
+ * KickForge Frontend - Mor M3
  */
 
 let isLoggedIn = false;
 let broadcasterId = null;
+let isFollowing = false;
 
 const el = {
   statusChip: document.getElementById('statusChip'),
   statusText: document.getElementById('statusText'),
   loginBtn: document.getElementById('loginBtn'),
   logoutBtn: document.getElementById('logoutBtn'),
-  
   kickPlayer: document.getElementById('kickPlayer'),
   offlineScreen: document.getElementById('offlineScreen'),
-  
   channelAvatar: document.getElementById('channelAvatar'),
   channelTitle: document.getElementById('channelTitle'),
   viewerCount: document.getElementById('viewerCount'),
   followerCount: document.getElementById('followerCount'),
   verifiedIcon: document.getElementById('verifiedIcon'),
-  
+  followBtn: document.getElementById('followBtn'),
   chatIframe: document.getElementById('chatIframe'),
   chatStatus: document.getElementById('chatStatus'),
   chatInput: document.getElementById('chatInput'),
   sendBtn: document.getElementById('sendBtn'),
   loginHint: document.getElementById('loginHint'),
-  
   authStatus: document.getElementById('authStatus'),
   toast: document.getElementById('toast'),
   toastTitle: document.getElementById('toastTitle'),
@@ -685,8 +602,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   checkAuthStatus();
   fetchChannelStatus();
-  
-  // Her 30 saniyede bir istatistikleri yenile
   setInterval(fetchChannelStatus, 30000);
 });
 
@@ -698,7 +613,6 @@ function initTabs() {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.setAttribute('aria-selected', 'false'));
       panels.forEach(p => p.classList.remove('active'));
-      
       tab.setAttribute('aria-selected', 'true');
       document.getElementById(tab.dataset.target).classList.add('active');
     });
@@ -720,9 +634,10 @@ async function checkAuthStatus() {
       el.chatInput.disabled = false;
       el.sendBtn.disabled = false;
       el.loginHint.classList.remove('active');
+      el.followBtn.style.display = 'inline-flex';
       
       el.authStatus.textContent = 'Aktif (Giriş Yapıldı)';
-      el.authStatus.style.color = 'var(--success)';
+      el.authStatus.style.color = 'var(--md-success)';
     } else {
       el.loginBtn.style.display = 'inline-flex';
       el.logoutBtn.style.display = 'none';
@@ -731,14 +646,15 @@ async function checkAuthStatus() {
       el.chatInput.disabled = true;
       el.sendBtn.disabled = true;
       el.loginHint.classList.add('active');
+      el.followBtn.style.display = 'none';
       
       el.authStatus.textContent = 'Yok (Misafir)';
-      el.authStatus.style.color = 'var(--text-muted)';
+      el.authStatus.style.color = 'var(--md-on-surface-variant)';
     }
   } catch (err) {
-    console.error('Auth kontrolü başarısız:', err);
+    console.error('Auth hatası:', err);
     el.authStatus.textContent = 'Hata';
-    el.authStatus.style.color = 'var(--error)';
+    el.authStatus.style.color = 'var(--md-error)';
   }
 }
 
@@ -751,10 +667,33 @@ async function handleLogout() {
   }
 }
 
-/* 
- * İşte sihir burada: Kendi sunucumuzdaki /api/stats'a istek atıyoruz.
- * Artık CORS derdi yok.
- */
+async function handleFollow() {
+  if (!isLoggedIn) return;
+  
+  el.followBtn.disabled = true;
+  el.followBtn.innerHTML = '<span>İşleniyor...</span>';
+  
+  try {
+    const res = await fetch('/api/follow', { method: 'POST' });
+    if (res.ok) {
+      isFollowing = true;
+      el.followBtn.classList.add('followed');
+      el.followBtn.classList.remove('btn-outline');
+      el.followBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg><span>Takipte</span>';
+      showToast('Başarılı', 'Mor Tilki takip edildi.');
+    } else {
+      const err = await res.json();
+      showToast('Hata', err.error || 'Takip edilemedi.', true);
+      el.followBtn.innerHTML = '<span>Takip Et</span>';
+      el.followBtn.disabled = false;
+    }
+  } catch (err) {
+    showToast('Hata', 'Sunucuya ulaşılamadı.', true);
+    el.followBtn.innerHTML = '<span>Takip Et</span>';
+    el.followBtn.disabled = false;
+  }
+}
+
 async function fetchChannelStatus() {
   try {
     const res = await fetch('/api/stats');
@@ -764,26 +703,21 @@ async function fetchChannelStatus() {
     
     if (data.broadcasterId) broadcasterId = data.broadcasterId;
     
-    // Profil Fotoğrafı
     if (data.profilePic) {
       el.channelAvatar.innerHTML = `<img src="${data.profilePic}" alt="Mor Tilki" onerror="this.parentNode.textContent='MT'">`;
     }
     
-    // Onay Rozeti
     if (data.verified) el.verifiedIcon.style.display = 'inline-block';
     
-    // Takipçi Sayısı
     if (data.followersCount !== undefined) {
       el.followerCount.textContent = data.followersCount.toLocaleString('tr-TR');
     }
     
-    // Canlı Durumu
     if (data.isLive) {
       el.statusChip.dataset.state = 'live';
       el.statusText.textContent = 'Canlı';
       el.kickPlayer.style.display = 'block';
       el.offlineScreen.classList.remove('active');
-      
       el.channelTitle.textContent = data.sessionTitle || 'Canlı Yayın';
       el.viewerCount.textContent = (data.viewerCount || 0).toLocaleString('tr-TR');
     } else {
@@ -791,15 +725,12 @@ async function fetchChannelStatus() {
       el.statusText.textContent = 'Çevrimdışı';
       el.kickPlayer.style.display = 'none';
       el.offlineScreen.classList.add('active');
-      
       el.channelTitle.textContent = 'Şu an yayında değil';
       el.viewerCount.textContent = '0';
     }
-    
   } catch (err) {
     console.warn('Durum çekilemedi:', err);
     el.statusText.textContent = 'Durum Alınamadı';
-    // Hata olsa da oynatıcıyı açık bırak
     el.kickPlayer.style.display = 'block';
     el.offlineScreen.classList.remove('active');
     el.channelTitle.textContent = 'Bağlantı hatası...';
@@ -837,6 +768,7 @@ async function sendMessage() {
       el.loginBtn.style.display = 'inline-flex';
       el.logoutBtn.style.display = 'none';
       el.chatInput.disabled = true;
+      el.followBtn.style.display = 'none';
     } else {
       const errText = await res.text();
       showToast('Gönderilemedi', errText, true);
@@ -854,16 +786,12 @@ let toastTimeout;
 function showToast(title, message, isError = false) {
   el.toastTitle.textContent = title;
   el.toastMessage.textContent = message;
-  
   if (isError) el.toast.classList.add('error');
   else el.toast.classList.remove('error');
   
   el.toast.classList.add('show');
-  
   clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => {
-    el.toast.classList.remove('show');
-  }, 4000);
+  toastTimeout = setTimeout(() => el.toast.classList.remove('show'), 4000);
 }
 </script>
 
