@@ -1,37 +1,14 @@
 export default async function handler(req, res) {
-  // Vercel'in req.query'si yerine URL'den parametreleri okumak daha garantidir
-  const protocol = req.headers['x-forwarded-proto'] || 'http';
-  const url = new URL(req.url, `${protocol}://${req.headers.host}`);
-  const code = url.searchParams.get('code');
-  const error = url.searchParams.get('error');
+  // URL parse uyarısını önlemek için Vercel'in kendi query sistemini kullanıyoruz
+  const code = req.query.code;
 
-  // Eğer Kick bir hata döndürdüyse (örn. kullanıcı izin vermediyse)
-  if (error) {
-    return res.status(400).send(`
-      <div style="font-family: sans-serif; padding: 40px; text-align: center;">
-        <h1 style="color: red;">Kick Hatası: ${error}</h1>
-        <p>Yetkilendirme sırasında bir sorun oluştu.</p>
-        <a href="/">Geri Dön</a>
-      </div>
-    `);
-  }
-
-  // Kod yoksa (kullanıcı bu sayfaya doğrudan girmişse)
   if (!code) {
-    return res.status(400).send(`
-      <div style="font-family: sans-serif; padding: 40px; text-align: center;">
-        <h1>Yetkilendirme Kodu Bulunamadı</h1>
-        <p>Bu sayfaya doğrudan giremezsiniz. Lütfen ana sayfaya dönüp "Kick ile Giriş Yap" butonuna tıklayın.</p>
-        <br>
-        <a href="/" style="background: #D0BCFF; color: #381E72; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ana Sayfaya Dön</a>
-      </div>
-    `);
+    return res.status(400).send("Yetkilendirme kodu bulunamadı.");
   }
 
-  // Token alma işlemi
   const clientId = process.env.Client_Id;
   const clientSecret = process.env.Client_Secret;
-  // DİKKAT: Bu adres Kick panelindekiyle BİREBİR AYNI olmalı
+  // KICK PANELİNE YAZDIĞIN ADRESLE BİREBİR AYNI OLACAK
   const redirectUri = `https://kickforge-mor-tilki.vercel.app/api/callback`;
 
   const params = new URLSearchParams();
@@ -51,20 +28,10 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (data.access_token) {
-      // Token başarıyla alındı, çereze kaydet ve ana sayfaya dön
       res.setHeader('Set-Cookie', `kick_token=${data.access_token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${data.expires_in || 3600}`);
       res.redirect('/');
     } else {
-      // Kick token vermeyi reddetti (genelde Client Secret veya Redirect URI yanlıştır)
-      res.status(500).send(`
-        <div style="font-family: sans-serif; padding: 40px; text-align: center;">
-          <h1 style="color: red;">Token Alınamadı</h1>
-          <p>Kick sunucusu token vermeyi reddetti. Detaylar aşağıda:</p>
-          <pre style="background: #f0f0f0; padding: 20px; text-align: left; display: inline-block;">${JSON.stringify(data, null, 2)}</pre>
-          <br><br>
-          <a href="/">Geri Dön</a>
-        </div>
-      `);
+      res.status(500).json(data); // Hata varsa ekrana bas
     }
   } catch (err) {
     res.status(500).send('Sunucu hatası: ' + err.message);
