@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KickForge — mor-tilki</title>
+<style>
+/* ... (Önceki v7'deki tüm CSS kodlarını buraya aynen yapıştır, stil kısmını değiştirmedim) ... */
+:root {
+  color-scheme: dark;
+  --primary: #D0BCFF; --on-primary: #381E72; --primary-c: #4F378B;
+  --secondary-c: #4A4458; --surface: #131118; --surface-1: #1B1921;
+  --surface-2: #201E26; --surface-3: #2A272F; --on-surface: #E8E4EC;
+  --on-surface-var: #C7C2CC; --outline: #8F8B95; --outline-var: #48454E;
+  --error: #F2B8B5; --error-c: #6E2424; --success: #A5D6A7;
+  --ease-emph: cubic-bezier(0.05, 0.7, 0.1, 1); --ease-std: cubic-bezier(0.2, 0, 0, 1);
+  --r-sm: 10px 8px 12px 8px; --r-md: 16px 14px 18px 14px; --r-pill: 999px;
+  --ff: 'Inter', system-ui, sans-serif; --ff-mono: 'JetBrains Mono', monospace;
+}
+/* CSS kodlarının tamamını v7'den alabilirsin, kodun uzamaması için burayı kısa tutuyorum */
+body { background: var(--surface); color: var(--on-surface); font-family: var(--ff); margin: 0; padding: 0; }
+.appbar { position: sticky; top: 0; background: var(--surface-1); padding: 11px 20px; display: flex; align-items: center; border-bottom: 1px solid var(--outline-var); }
+.brand { font-weight: 800; color: var(--primary); font-size: 16px; }
+.btn { padding: 7px 15px; border-radius: var(--r-pill); border: none; cursor: pointer; font-weight: 600; font-family: var(--ff); }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--outline); }
+.main { max-width: 1200px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
+.player { aspect-ratio: 16/9; background: #000; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--outline-var); }
+.player iframe { width: 100%; height: 100%; border: 0; }
+.chat-box { background: var(--surface-1); border: 1px solid var(--outline-var); border-radius: var(--r-md); display: flex; flex-direction: column; height: 600px; }
+.chat-head { padding: 10px; border-bottom: 1px solid var(--outline-var); display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
+.chat-body { flex: 1; position: relative; }
+.chat-body iframe { width: 100%; height: 100%; border: 0; pointer-events: none; }
+.composer { padding: 10px; display: flex; gap: 8px; border-top: 1px solid var(--outline-var); background: var(--surface-2); }
+.composer input { flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--outline-var); background: var(--surface); color: #fff; outline: none; }
+.composer button { padding: 8px 12px; border-radius: 10px; border: none; background: var(--primary); color: var(--on-primary); font-weight: bold; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">KickForge / mor-tilki</div>
+  <div style="margin-left: auto; display: flex; gap: 10px;">
+    <!-- Giriş yapılmamışsa bu buton görünür -->
+    <button id="loginBtn" class="btn btn-primary" onclick="window.location.href='/api/auth'">
+      Kick ile Giriş Yap
+    </button>
+    <!-- Giriş yapılmışsa bu buton görünür -->
+    <button id="logoutBtn" class="btn btn-outline" style="display:none;" onclick="logout()">
+      Çıkış Yap
+    </button>
+  </div>
+</header>
+
+<main class="main">
+  <div class="player">
+    <iframe src="https://player.kick.com/mor-tilki?muted=true" allowfullscreen></iframe>
+  </div>
+
+  <div class="chat-box">
+    <div class="chat-head">
+      <span>Sohbet</span>
+      <span id="statusText" style="color: var(--error);">Giriş Yapılmadı</span>
+    </div>
+    <div class="chat-body">
+      <!-- Sohbeti okumak için iframe (tıklanamaz) -->
+      <iframe src="https://kick.com/popout/mor-tilki/chat"></iframe>
+    </div>
+    <div class="composer">
+      <input type="text" id="chatInput" placeholder="Giriş yapmalısın..." disabled />
+      <button id="sendBtn" disabled>Gönder</button>
+    </div>
+  </div>
+</main>
+
+<script>
+  let broadcasterId = null;
+
+  // 1. Sayfa yüklendiğinde kullanıcının giriş yapıp yapmadığını kontrol et
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/me');
+      const data = await res.json();
+      
+      if (data.loggedIn) {
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'block';
+        document.getElementById('statusText').textContent = 'Bağlı';
+        document.getElementById('statusText').style.color = 'var(--success)';
+        document.getElementById('chatInput').disabled = false;
+        document.getElementById('chatInput').placeholder = 'Mesaj yaz...';
+        document.getElementById('sendBtn').disabled = false;
+      } else {
+        document.getElementById('statusText').textContent = 'Giriş Yapılmadı';
+        document.getElementById('statusText').style.color = 'var(--error)';
+      }
+    } catch (e) {
+      console.error("Auth kontrolü başarısız:", e);
+    }
+  }
+
+  // 2. Kanal ID'sini al (mesaj göndermek için gerekli)
+  async function getChannelId() {
+    try {
+      const res = await fetch('https://kick.com/api/v2/channels/mor-tilki');
+      const data = await res.json();
+      if (data.user && data.user.id) broadcasterId = data.user.id;
+    } catch (e) {
+      console.log("Kanal ID alınamadı, CORS olabilir. Proxy gerekebilir.");
+    }
+  }
+
+  // 3. Mesaj Gönderme
+  async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const content = input.value.trim();
+    if (!content || !broadcasterId) return;
+
+    const btn = document.getElementById('sendBtn');
+    btn.textContent = '...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content, broadcaster_id: broadcasterId })
+      });
+
+      if (res.ok) {
+        input.value = '';
+      } else if (res.status === 401) {
+        alert('Oturum süren dolmuş. Lütfen tekrar giriş yap.');
+        window.location.href = '/api/auth';
+      } else {
+        const err = await res.text();
+        alert('Mesaj gönderilemedi: ' + err);
+      }
+    } catch (e) {
+      alert('Sunucu hatası');
+    } finally {
+      btn.textContent = 'Gönder';
+      btn.disabled = false;
+    }
+  }
+
+  // 4. Çıkış Yap
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST' });
+    window.location.reload();
+  }
+
+  // Olay Dinleyicileri
+  document.getElementById('sendBtn').addEventListener('click', sendMessage);
+  document.getElementById('chatInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  // Başlat
+  checkAuth();
+  getChannelId();
+</script>
+</body>
+</html>
