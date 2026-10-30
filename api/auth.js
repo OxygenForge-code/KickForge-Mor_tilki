@@ -1,6 +1,5 @@
 export default function handler(req, res) {
   const clientId = process.env.Client_Id;
-  // Vercel'deki canlı linkini buraya yaz (Kick Developer paneline de aynısını yazmalısın)
   const redirectUri = `https://kickforge-mor-tilki.vercel.app/api/callback`;
   
   const scope = 'chat:write user:read';
