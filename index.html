@@ -1361,7 +1361,7 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
 
   <div class="warn" id="netWarn" role="status" hidden>
     <svg class="ico" aria-hidden="true"><use href="#i-alert" /></svg>
-    <span>Kanal verisi gelmedi. Kick'in herkese açık ucu ara sıra boş dönüyor — tekrar deneyebiliriz.</span>
+    <span>Kanal verisi gelmedi. Kick'in herkese açık ucu bu sunucudan ara sıra 403 dönüyor; birkaç saniye içinde kendim tekrar deniyorum.</span>
     <button class="warn__retry" type="button" data-retry>tekrar dene</button>
   </div>
 
@@ -1895,8 +1895,8 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
     el.apiStatus.textContent = hasError ? 'API yanıt vermiyor' : 'API sağlıklı';
   }
 
-  function renderStats(data) {
-    state.lastCheck = Date.now();
+  function renderStats(data, { fromCache = false, cacheTime = Date.now() } = {}) {
+    state.lastCheck = fromCache ? cacheTime : Date.now();
 
     const live = data.isLive === true;
     setLive(live);
@@ -1938,8 +1938,47 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
       el.sessionTitle.textContent = 'şu an yayında değil';
     }
 
+    if (fromCache) {
+      // localStorage'dan geldi: uyarı şeridi açık kalsın, kayıt ezilmesin
+      paintLastCheck();
+      return;
+    }
+
     setNetworkError(false);
+    cacheStats(data);
     paintLastCheck();
+  }
+
+  const STATS_KEY = 'kickforge:stats';
+  const STATS_TTL = 15 * 60 * 1000;
+
+  function cacheStats(data) {
+    if (data.stale) return; // sunucudan gelen eski kopya tazeymiş gibi durmasın
+    try {
+      localStorage.setItem(STATS_KEY, JSON.stringify({ zaman: Date.now(), veri: data }));
+    } catch (err) {
+      /* gizli mod ya da kota dolu: sorun değil */
+    }
+  }
+
+  function cachedStats() {
+    try {
+      const kayit = JSON.parse(localStorage.getItem(STATS_KEY) || 'null');
+      if (!kayit || !kayit.veri) return null;
+      if (Date.now() - kayit.zaman > STATS_TTL) return null;
+      return kayit;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  let retryTimer = null;
+  function retryLater() {
+    if (retryTimer || document.hidden) return;
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      if (!document.hidden) fetchStats({ silent: true });
+    }, 6000);
   }
 
   async function fetchStats({ silent = false } = {}) {
@@ -1957,6 +1996,8 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
     } catch (err) {
       console.warn('[KickForge] durum çekilemedi:', err);
       setNetworkError(true);
+      // kick'in ucu bazen 403 dönüyor; kendimiz birkaç saniye sonra tekrar deniyoruz
+      retryLater();
 
       if (!state.lastCheck) {
         // Hiç veri alamadık, ekranda "canlı" yazmasın.
@@ -2196,6 +2237,13 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
 
     setInterval(paintClock, 15000);
     setInterval(paintLastCheck, 5000);
+
+    const kopya = cachedStats();
+    if (kopya) {
+      // son başarılı çekim: ağ düşse de ekran boş kalmasın
+      renderStats(kopya.veri, { fromCache: true, cacheTime: kopya.zaman });
+      setNetworkError(true);
+    }
 
     checkAuth();
     fetchStats();
