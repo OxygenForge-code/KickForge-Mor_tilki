@@ -32,14 +32,30 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
 
-      - name: nsis yoksa kur
+      # windows runner'da nsis zaten kurulu geliyor; choco'ya gerek yok.
+      # yoksa da kurmayı deniyor ama asıl yol makensis'i bulup sürümünü basmak.
+      - name: nsis
         shell: pwsh
         run: |
-          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
-            choco install nsis -y --no-progress
-            if ($LASTEXITCODE -ne 0) { throw "nsis kurulamadı ($LASTEXITCODE)" }
+          $adaylar = @(
+            (Get-Command makensis -ErrorAction SilentlyContinue).Source,
+            'C:\Program Files (x86)\NSIS\makensis.exe',
+            'C:\Program Files\NSIS\makensis.exe'
+          ) | Where-Object { $_ -and (Test-Path $_) }
+
+          if (@($adaylar).Count -eq 0) {
+            "makensis yok, choco deneniyor" | Add-Content $env:GITHUB_STEP_SUMMARY
+            choco install nsis -y --no-progress *>&1 | Tee-Object -FilePath nsis.log
+            Get-Content nsis.log -Tail 30 | Add-Content $env:GITHUB_STEP_SUMMARY
+            $adaylar = @('C:\Program Files (x86)\NSIS\makensis.exe') | Where-Object { Test-Path $_ }
           }
-          makensis -VERSION
+
+          if (@($adaylar).Count -eq 0) { throw 'makensis bulunamadı' }
+          $makensis = @($adaylar)[0]
+          & $makensis /VERSION
+          if ($LASTEXITCODE -ne 0) { throw "makensis çalışmadı ($LASTEXITCODE): $makensis" }
+          "makensis: $makensis" | Add-Content $env:GITHUB_STEP_SUMMARY
+          "makensis: $makensis"
 
       - name: bagimliliklar
         shell: pwsh
