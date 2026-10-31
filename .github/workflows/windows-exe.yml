@@ -75,7 +75,10 @@ jobs:
           }
           if ($code -ne 0) {
             "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            Get-Content build.log -Tail 6 -ErrorAction SilentlyContinue | ForEach-Object { "::error file=desktop/build.js::$($_)" }
+            $hatalar = Get-Content build.log -ErrorAction SilentlyContinue |
+              Where-Object { $_ -match 'HATA|rror|bort|nvalid|no files' } |
+              Select-Object -Last 3
+            foreach ($s in $hatalar) { "::error::" + ($s -replace '%','%25') }
             throw "build.js düştü ($code)"
           }
 

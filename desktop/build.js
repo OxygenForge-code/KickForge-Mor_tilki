@@ -131,10 +131,21 @@ async function main() {
   const surum = require('./package.json').version + '-' + new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
   const onEk = process.platform === 'win32' ? '/D' : '-D';
   log('tek dosya .exe derleniyor (sürüm ' + surum + ')...');
-  execFileSync(makensis, [onEk + 'VERSION=' + surum, 'installer.nsi'], {
-    cwd: __dirname,
-    stdio: 'inherit'
-  });
+  try {
+    const nsCikti = execFileSync(makensis, [onEk + 'VERSION=' + surum, 'installer.nsi'], {
+      cwd: __dirname,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    if (nsCikti && nsCikti.trim()) console.log(nsCikti.trim());
+  } catch (e) {
+    // makensis kendi hatasını stdout'a yazıyor; yakalamazsak log'da kayboluyor
+    const nsCikti = [e.stdout, e.stderr].filter(Boolean).join('\n').trim();
+    if (nsCikti) console.error(nsCikti);
+    const onemli = nsCikti.split(/\r?\n/).map((s) => s.trim())
+      .filter((s) => /error|abort|invalid|hata|no files|not found/i.test(s)).slice(0, 3);
+    throw new Error('makensis düştü (' + e.status + ')' + (onemli.length ? ' · ' + onemli.join(' · ') : ''));
+  }
   if (!fs.existsSync(INSTALLER_OUT)) throw new Error('installer çıktısı yok: ' + INSTALLER_OUT);
   log('tek dosya exe:', INSTALLER_OUT, human(fs.statSync(INSTALLER_OUT).size));
 }
