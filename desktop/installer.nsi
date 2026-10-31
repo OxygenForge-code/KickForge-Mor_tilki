@@ -20,7 +20,10 @@ OutFile "dist\KickForge.exe"
 InstallDir "$LOCALAPPDATA\${APP}"
 InstallDirRegKey HKCU "Software\${APP}" "InstallDir"
 RequestExecutionLevel user
-SetCompressor /SOLID lzma
+; lzma yerine zlib: 268 MB'lık yükü tek parça lzma ile sıkıştırmak
+; makensis'i bellek ve dosya kilidi tarafında zorluyordu. exe birkaç MB
+; büyük çıkıyor ama derleme saniyeler içinde ve tekrarlanabilir bitiyor.
+SetCompressor zlib
 ShowInstDetails nevershow
 AutoCloseWindow true
 CRCCheck on

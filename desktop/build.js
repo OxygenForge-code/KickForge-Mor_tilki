@@ -131,20 +131,28 @@ async function main() {
   const surum = require('./package.json').version + '-' + new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
   const onEk = process.platform === 'win32' ? '/D' : '-D';
   log('tek dosya .exe derleniyor (sürüm ' + surum + ')...');
-  try {
-    const nsCikti = execFileSync(makensis, [onEk + 'VERSION=' + surum, 'installer.nsi'], {
-      cwd: __dirname,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-    if (nsCikti && nsCikti.trim()) console.log(nsCikti.trim());
-  } catch (e) {
-    // makensis kendi hatasını stdout'a yazıyor; yakalamazsak log'da kayboluyor
-    const nsCikti = [e.stdout, e.stderr].filter(Boolean).join('\n').trim();
-    if (nsCikti) console.error(nsCikti);
-    const onemli = nsCikti.split(/\r?\n/).map((s) => s.trim())
-      .filter((s) => /error|abort|invalid|hata|no files|not found/i.test(s)).slice(0, 3);
-    throw new Error('makensis düştü (' + e.status + ')' + (onemli.length ? ' · ' + onemli.join(' · ') : ''));
+  const ayrinti = process.platform === 'win32' ? '/V3' : '-V3';
+  let sonHata = '';
+  for (let deneme = 1; deneme <= 2; deneme++) {
+    try {
+      const nsCikti = execFileSync(makensis, [onEk + 'VERSION=' + surum, ayrinti, 'installer.nsi'], {
+        cwd: __dirname,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+      if (nsCikti && nsCikti.trim()) console.log(nsCikti.trim());
+      break;
+    } catch (e) {
+      // makensis kendi hatasını stdout'a yazıyor; yakalamazsak log'da kayboluyor
+      const nsCikti = [e.stdout, e.stderr].filter(Boolean).join('\n').trim();
+      if (nsCikti) console.error(nsCikti);
+      const satirlar = nsCikti.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      sonHata = satirlar.find((s) => /error/i.test(s)) || satirlar[0] || ('çıkış ' + e.status);
+      if (deneme === 2) throw new Error('makensis düştü (' + e.status + ') · ' + sonHata);
+      // windows runner'da dosya kilidi/defender yüzünden ilk deneme düşebiliyor
+      log('makensis düştü, 5 sn sonra tekrar: ' + sonHata);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000);
+    }
   }
   if (!fs.existsSync(INSTALLER_OUT)) throw new Error('installer çıktısı yok: ' + INSTALLER_OUT);
   log('tek dosya exe:', INSTALLER_OUT, human(fs.statSync(INSTALLER_OUT).size));
