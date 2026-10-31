@@ -105,7 +105,10 @@ async function main() {
   const resources = path.join(OUT, 'resources');
   fs.rmSync(path.join(resources, 'default_app.asar'), { force: true });
 
+  // app.asar yerine düz klasör: electron resources/app'ı da yükler. windows
+  // runner'da makensis tam olarak app.asar'ı açamadığı için kurucu düşüyordu.
   const appDir = path.join(resources, 'app');
+  fs.rmSync(appDir, { recursive: true, force: true });
   fs.mkdirSync(appDir, { recursive: true });
   fs.writeFileSync(
     path.join(appDir, 'package.json'),
@@ -114,9 +117,11 @@ async function main() {
   fs.copyFileSync(path.join(__dirname, 'main.js'), path.join(appDir, 'main.js'));
   fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(appDir, 'index.html'));
 
-  const asar = require('@electron/asar');
-  await asar.createPackage(appDir, path.join(resources, 'app.asar'));
-  fs.rmSync(appDir, { recursive: true, force: true });
+  // makensis bu dosyaları okuyacak; gerçekten okunabildiklerini burada gör
+  for (const dosya of ['package.json', 'main.js', 'index.html']) {
+    const fd = fs.openSync(path.join(appDir, dosya), 'r');
+    fs.closeSync(fd);
+  }
 
   log('exe:', exe);
   log('exe boyutu:', human(fs.statSync(exe).size));

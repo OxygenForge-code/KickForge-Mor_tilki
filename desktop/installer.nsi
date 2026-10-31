@@ -1,12 +1,15 @@
-; KickForge · tek dosya Windows kurucusu
+; KickForge - tek dosya Windows kurucusu
 ;
-; build.js bunu "makensis installer.nsi" ile derler, çıktı dist/KickForge.exe.
-; Akış:
-;   - bu makineye kurulmuş ve sürümü aynıysa: ekran göstermeden çalıştır
-;   - değilse (ilk açılış ya da yeni sürüm): $LOCALAPPDATA\KickForge'e kur,
-;     kısayol bırak, sonra çalıştır
+; build.js bunu "makensis installer.nsi" ile derler, cikti dist/KickForge.exe.
+; Akis:
+;   - bu makineye kurulmus ve surumu ayniysa: ekran gostermeden calistir
+;   - degilse (ilk acilis ya da yeni surum): $LOCALAPPDATA\KickForge'e kur,
+;     kisayol birak, sonra calistir
 ;
-; RequestExecutionLevel user → yönetici gerekmez, Program Files'a dokunulmaz.
+; RequestExecutionLevel user -> yonetici gerekmez, Program Files'a dokunulmaz.
+;
+; Not: bu dosyayi ASCII tutuyoruz. Turkce karakterler windows'ta makensis
+; tarafindan ACP olarak okunuyor ve betik ayristirmasi degisebiliyor.
 
 Unicode true
 
@@ -20,9 +23,8 @@ OutFile "dist\KickForge.exe"
 InstallDir "$LOCALAPPDATA\${APP}"
 InstallDirRegKey HKCU "Software\${APP}" "InstallDir"
 RequestExecutionLevel user
-; lzma yerine zlib: 268 MB'lık yükü tek parça lzma ile sıkıştırmak
-; makensis'i bellek ve dosya kilidi tarafında zorluyordu. exe birkaç MB
-; büyük çıkıyor ama derleme saniyeler içinde ve tekrarlanabilir bitiyor.
+; zlib: 268 MB'lik yuku tek parca lzma ile sikistirmak makensis'i zorluyordu.
+; exe birkac MB buyuk cikiyor ama derleme saniyeler icinde bitiyor.
 SetCompressor zlib
 ShowInstDetails nevershow
 AutoCloseWindow true
@@ -31,7 +33,7 @@ CRCCheck on
 Page instfiles
 
 Function .onInit
-  ; kurulu ve güncelse kurulum ekranı açmadan doğrudan uygulamayı başlat
+  ; kurulu ve guncelse kurulum ekrani acmadan dogrudan uygulamayi baslat
   ReadRegStr $R0 HKCU "Software\${APP}" "Version"
   StrCmp $R0 "${VERSION}" 0 kur
   IfFileExists "$INSTDIR\${APP}.exe" 0 kur
@@ -42,7 +44,7 @@ FunctionEnd
 
 Section "KickForge" SecMain
   SetOutPath "$INSTDIR"
-  ; dist/KickForge-win32-x64 içeriği olduğu gibi (alt dizinleriyle) kopyalanır
+  ; dist/KickForge-win32-x64 icerigi alt dizinleriyle kopyalanir
   File /r "dist\KickForge-win32-x64\*.*"
 
   WriteRegStr HKCU "Software\${APP}" "Version" "${VERSION}"
