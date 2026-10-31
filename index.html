@@ -2,773 +2,2188 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>KickForge — mor-tilki</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Material 3 Icons (Material Symbols) -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>mor tilki — yayın kontrol · KickForge</title>
+<meta name="description" content="mor-tilki'nin Kick yayınları için sade bir izleme ekranı: canlı durum, izleyici sayısı ve sohbet tek sayfada." />
+<meta name="theme-color" content="#0a0810" />
+<meta name="color-scheme" content="dark" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="mor tilki — yayın kontrol" />
+<meta property="og:description" content="Canlı mı, kaç kişi izliyor, sohbet ne diyor — hepsi tek ekranda." />
+<meta property="og:image" content="https://files.kick.com/images/user/116713467/profile_image/conversion/edf5cd15-0a3b-4a2d-918b-0a60b39c610d-fullsize.webp" />
+<meta name="twitter:card" content="summary" />
 
 <!--
-  KickForge v10
-  -------------
-  Takip butonunu kaldırdım. Sebep: Kick'in kendi iç API'si OAuth token'ı
-  yerine tarayıcı çerezlerini istiyor, bu yüzden "Unauthenticated"
-  hatası alıyorduk. Artık kullanıcıyı doğrudan Kick sayfasına yönlendiren
-  bir buton var. Zaten takipse orada "Takipten Çık" seçeneğini görecek.
+  kickforge / index
 
-  Simgeleri artık Google'ın resmî Material Symbols fontuyla çekiyorum.
-  Daha hafif ve M3 standartlarına tam uyumlu.
-
-  - h.
+  - takip butonu yok: kick'in iç api'si oauth token'ı değil tarayıcı
+    çerezini bekliyor, "unauthenticated" dönüyordu. kanal sayfasına
+    yolluyoruz. api/follow.js o yüzden ölü, ileride silinecek.
+  - material symbols fontunu attım. 8 kb ikon için ikinci font saçma.
+    ikonlar sayfanın içinde svg symbol olarak duruyor.
+  - oynatıcı tembel: yayın kapalıyken iframe'e src atanmıyor.
+  - görsel fikir: monitör + tally + mono göstergeler. mor gradyan yok.
 -->
 
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0810'/%3E%3Cpath d='M7 7l4.4 3.2h9.2L25 7l.7 9.4c0 5.6-4.4 9.6-9.7 9.6S6.3 22 6.3 16.4L7 7z' fill='%23c6f24e'/%3E%3Cpath d='M12 15.4h1.6M18.4 15.4H20M14.6 19.4h2.8' stroke='%230a0810' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E" />
+
 <style>
-/* ─────────────────────────────────────────────────────────────
-   Material Design 3 Değişkenleri (Mor Tema)
-   ───────────────────────────────────────────────────────────── */
+/* renkler, yazı tipleri, ölçüler */
 :root {
   color-scheme: dark;
 
-  --md-primary: #D0BCFF;
-  --md-on-primary: #381E72;
-  --md-primary-container: #4F378B;
-  --md-on-primary-container: #EADDFF;
-  
-  --md-secondary-container: #4A4458;
-  --md-on-secondary-container: #E8DEF8;
+  --ink:        #0a0810;
+  --ink-1:      #0e0b16;
+  --ink-2:      #14101f;
+  --ink-3:      #1b1629;
+  --line:       #2a2440;
+  --line-soft:  #211b33;
 
-  --md-surface: #141218;
-  --md-surface-container-lowest: #0F0D13;
-  --md-surface-container-low: #1D1B20;
-  --md-surface-container: #211F26;
-  --md-surface-container-high: #2B2930;
-  --md-surface-container-highest: #36343B;
+  --text:       #f0eaf8;
+  --muted:      #a89fbe;
+  --faint:      #7a7291;
 
-  --md-on-surface: #E6E0E9;
-  --md-on-surface-variant: #CAC4D0;
-  --md-outline: #938F99;
-  --md-outline-variant: #49454F;
+  --violet:     #b49bff;
+  --violet-dim: #6a4dc4;
+  --lime:       #c6f24e;
+  --lime-dim:   #8fae32;
+  --alert:      #ff7a8a;
 
-  --md-error: #F2B8B5;
-  --md-on-error: #601410;
-  --md-error-container: #8C1D18;
-  --md-success: #B5D6C0;
-  --md-success-container: #1B4A1F;
+  --display: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  --sans: 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --md-ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
-  --md-ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  
-  /* Asimetrik köşeler - insan dokunuşu */
-  --shape-sm: 12px 10px 14px 10px;
-  --shape-md: 16px 14px 18px 14px;
-  --shape-lg: 24px 20px 26px 22px;
-  --shape-pill: 999px;
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+
+  --ease: cubic-bezier(.22, .68, 0, 1);
+  --gutter: clamp(16px, 3.6vw, 40px);
+  --max: 1380px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+/* temel */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
-  background-color: var(--md-surface);
-  color: var(--md-on-surface);
-  font-family: var(--font-sans);
-  font-size: 14.5px;
-  line-height: 1.6;
-  min-height: 100vh;
+  min-height: 100svh;
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--ink);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
-/* Arka plan noise */
+/* Arka plan: çok hafif ızgara + üstte mor bir sızıntı.
+   İkisi de neredeyse görünmez, sadece "boş siyah" hissini kırıyor. */
 body::before {
   content: '';
-  position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, .022) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, .022) 1px, transparent 1px);
+  background-size: 84px 84px;
+  mask-image: radial-gradient(110% 80% at 50% 0%, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(110% 80% at 50% 0%, #000 0%, transparent 72%);
+}
+body::after {
+  content: '';
+  position: fixed;
+  top: -32vh;
+  left: 50%;
+  width: min(1100px, 120vw);
+  height: 70vh;
+  transform: translateX(-50%);
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(122, 82, 220, .16), transparent 78%);
+  filter: blur(20px);
 }
 
-::selection { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+img, svg, iframe { display: block; }
+/* .btn gibi display veren kurallar UA'nın [hidden] kuralını eziyor, o yüzden açıkça yazdım. */
+[hidden] { display: none !important; }
+a { color: inherit; }
+button, input { font: inherit; color: inherit; }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--md-surface); }
-::-webkit-scrollbar-thumb { background: var(--md-outline-variant); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--md-outline); }
+::selection { background: var(--lime); color: #10130a; }
 
-/* Material Simge Stili */
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  vertical-align: middle;
+/* Kaydırma çubuğu da sayfanın parçası olsun. */
+* { scrollbar-width: thin; scrollbar-color: #322b4a transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #2a2440;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
 }
-.material-symbols-outlined.filled {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
+::-webkit-scrollbar-thumb:hover { background: #3d3459; }
 
-/* ─────────────────────────────────────────────────────────────
-   Header
-   ───────────────────────────────────────────────────────────── */
-.appbar {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(20, 18, 24, 0.85);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border-bottom: 1px solid var(--md-outline-variant);
+:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
-.appbar-inner {
-  max-width: 1440px; margin: 0 auto; padding: 12px 24px;
-  display: flex; align-items: center; gap: 16px;
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: var(--r-sm);
+  background: var(--lime);
+  color: #10130a;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top .18s var(--ease);
+}
+.skip:focus { top: 12px; }
+
+/* ufak yardımcılar */
+.micro {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
+.ico {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ico--sm { width: 15px; height: 15px; }
+.ico--lg { width: 22px; height: 22px; }
+
+/* üst bar */
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: rgba(10, 8, 16, .82);
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  border-bottom: 1px solid var(--line);
+}
+
+/* En üstteki ince şerit: teknik künye. */
+.top__rule {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 7px var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.top__rule .micro { white-space: nowrap; }
+.top__stamp {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.top__stamp time { color: var(--muted); }
+
+.top__bar {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 13px var(--gutter);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ── Marka ── */
 .brand {
-  font-weight: 800; font-size: 18px; letter-spacing: -0.04em;
-  color: var(--md-primary); display: flex; align-items: center; gap: 8px;
-  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  text-decoration: none;
+  flex-shrink: 0;
 }
-.brand span {
-  font-weight: 500; font-size: 13px; color: var(--md-on-surface-variant);
-  font-family: var(--font-mono); letter-spacing: 0;
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(160deg, #221b36, #14101f);
+  border: 1px solid var(--line);
+  color: var(--lime);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .05) inset;
 }
-
-.header-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-
-.status-chip {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 6px 14px; border-radius: var(--shape-pill);
-  background: var(--md-surface-container-high);
-  border: 1px solid var(--md-outline-variant);
-  font-size: 12px; font-weight: 600; font-family: var(--font-mono);
-  color: var(--md-on-surface-variant);
-  transition: all 0.3s var(--md-ease-standard);
+.brand__mark .ico { width: 21px; height: 21px; stroke-width: 1.5; }
+.brand__name {
+  font-family: var(--display);
+  font-size: 23px;
+  line-height: 1;
+  letter-spacing: -.01em;
+  color: var(--text);
 }
-.status-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--md-outline); }
-.status-chip[data-state="live"] {
-  background: var(--md-error-container);
-  border-color: rgba(242, 184, 181, 0.3);
-  color: var(--md-error);
-}
-.status-chip[data-state="live"] .dot {
-  background: var(--md-error);
-  box-shadow: 0 0 8px var(--md-error);
-  animation: pulse 1.8s infinite;
-}
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(242, 184, 181, 0.5); }
-  70% { box-shadow: 0 0 0 6px rgba(242, 184, 181, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(242, 184, 181, 0); }
+.brand__slash {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--faint);
+  padding-left: 2px;
 }
 
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 8px 20px; border-radius: var(--shape-pill);
-  font-family: inherit; font-size: 13px; font-weight: 600;
-  cursor: pointer; border: none; text-decoration: none;
-  transition: all 0.2s var(--md-ease-emphasized);
+/* ── Sekmeler ── */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  justify-self: center;
 }
-.btn:active { transform: scale(0.96); }
-
-.btn-primary { background: var(--md-primary); color: var(--md-on-primary); }
-.btn-primary:hover { background: #E0D4FF; box-shadow: 0 2px 12px rgba(208, 188, 255, 0.25); }
-
-.btn-tonal { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
-.btn-tonal:hover { background: #5C546D; }
-
-.btn-outline { background: transparent; color: var(--md-primary); border: 1px solid var(--md-outline); }
-.btn-outline:hover { background: rgba(208, 188, 255, 0.08); }
-
-.btn-icon {
-  padding: 8px; border-radius: 50%; background: transparent;
-  color: var(--md-on-surface-variant); border: 1px solid transparent;
-}
-.btn-icon:hover { background: var(--md-surface-container-high); color: var(--md-on-surface); }
-
-/* ─────────────────────────────────────────────────────────────
-   Sekmeler
-   ───────────────────────────────────────────────────────────── */
-.tabs {
-  max-width: 1440px; margin: 0 auto; padding: 0 24px;
-  display: flex; gap: 4px; border-bottom: 1px solid var(--md-outline-variant);
-  overflow-x: auto;
-}
-.tabs::-webkit-scrollbar { display: none; }
-
 .tab {
-  padding: 14px 16px; background: transparent; border: none;
-  color: var(--md-on-surface-variant); font-family: inherit; font-size: 14px; font-weight: 500;
-  cursor: pointer; position: relative; transition: color 0.2s;
-  display: flex; align-items: center; gap: 8px;
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 9px 13px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .18s var(--ease), background-color .18s var(--ease);
 }
-.tab:hover { color: var(--md-on-surface); }
-.tab[aria-selected="true"] { color: var(--md-primary); }
-.tab::after {
-  content: ''; position: absolute; bottom: -1px; left: 16px; right: 16px;
-  height: 3px; background: var(--md-primary); border-radius: 3px 3px 0 0;
-  transform: scaleX(0); transition: transform 0.3s var(--md-ease-emphasized);
+.tab:hover { color: var(--text); background: rgba(255, 255, 255, .035); }
+.tab__no {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--faint);
+  transform: translateY(-1px);
 }
-.tab[aria-selected="true"]::after { transform: scaleX(1); }
+.tab[aria-selected="true"] { color: var(--text); }
+.tab[aria-selected="true"] .tab__no { color: var(--lime); }
+.tab[aria-selected="true"]::after {
+  content: '';
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--lime);
+}
 
-/* ─────────────────────────────────────────────────────────────
-   Ana Yerleşim
-   ───────────────────────────────────────────────────────────── */
-.main-container { max-width: 1440px; margin: 0 auto; padding: 24px; }
+/* ── Sağ taraf ── */
+.top__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: end;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .025);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  transition: color .2s var(--ease), border-color .2s var(--ease), background-color .2s var(--ease);
+}
+.chip__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .55;
+}
+.chip[data-live="true"] {
+  color: #0f1207;
+  background: var(--lime);
+  border-color: var(--lime);
+}
+.chip[data-live="true"] .chip__dot {
+  opacity: 1;
+  background: #0f1207;
+  animation: tally 2.4s ease-out infinite;
+}
+@keyframes tally {
+  0%   { box-shadow: 0 0 0 0 rgba(15, 18, 7, .55); }
+  60%  { box-shadow: 0 0 0 6px rgba(15, 18, 7, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(15, 18, 7, 0); }
+}
+
+/* ── Butonlar ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 38px;
+  padding: 0 17px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform .16s var(--ease), background-color .18s var(--ease), color .18s var(--ease), border-color .18s var(--ease), box-shadow .18s var(--ease);
+}
+.btn:active { transform: translateY(1px); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+.btn--lime {
+  background: var(--lime);
+  color: #10130a;
+  box-shadow: 0 6px 18px -10px rgba(198, 242, 78, .9);
+}
+.btn--lime:hover:not([disabled]) { background: #d4ff60; box-shadow: 0 8px 22px -8px rgba(198, 242, 78, .75); }
+
+.btn--ghost {
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--line);
+}
+.btn--ghost:hover:not([disabled]) { color: var(--text); border-color: #3b3358; background: rgba(255, 255, 255, .03); }
+
+.btn--violet {
+  background: rgba(180, 155, 255, .12);
+  color: var(--violet);
+  border-color: rgba(180, 155, 255, .28);
+}
+.btn--violet:hover:not([disabled]) { background: rgba(180, 155, 255, .18); color: #cbb8ff; }
+
+.btn--icon {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+.btn--icon:hover { color: var(--text); background: rgba(255, 255, 255, .05); }
+
+/* Dönen ikon: sunucudan yanıt beklerken. */
+.spin { animation: spin 900ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* gövde */
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: clamp(18px, 2.4vw, 30px) var(--gutter) 0;
+}
 
 .panel { display: none; }
-.panel.active { display: block; animation: fadeUp 0.4s var(--md-ease-emphasized) forwards; }
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+.panel.is-active { display: block; animation: rise .34s var(--ease) both; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
 }
 
-.live-grid {
-  display: grid; grid-template-columns: minmax(0, 1fr) 380px;
-  gap: 24px; align-items: start;
+/* Uyarı şeridi: API'ye ulaşamadığımızda çıkıyor. */
+.warn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 122, 138, .28);
+  border-left: 2px solid var(--alert);
+  border-radius: var(--r-sm);
+  background: rgba(255, 122, 138, .06);
+  font-size: 13px;
+  color: #f3c9cf;
 }
-@media (max-width: 1024px) { .live-grid { grid-template-columns: 1fr; } }
-
-/* ─────────────────────────────────────────────────────────────
-   Oynatıcı
-   ───────────────────────────────────────────────────────────── */
-.player-wrapper {
-  position: relative; width: 100%; aspect-ratio: 16/9;
-  background: #000; border-radius: var(--shape-md);
-  overflow: hidden; border: 1px solid var(--md-outline-variant);
-  box-shadow: 0 12px 32px -8px rgba(0,0,0,0.7);
+.warn .ico { color: var(--alert); }
+.warn__retry {
+  margin-left: auto;
+  border: 1px solid rgba(255, 122, 138, .3);
+  background: transparent;
+  color: #f3c9cf;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
 }
-.player-wrapper iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.warn__retry:hover { background: rgba(255, 122, 138, .12); }
 
-.offline-screen {
-  position: absolute; inset: 0;
-  background: radial-gradient(circle at center, var(--md-surface-container), var(--md-surface-container-low));
-  display: none; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; padding: 32px;
-  transform: scale(0.98) rotate(-0.6deg);
-  border-radius: var(--shape-md); border: 1px dashed var(--md-outline-variant);
+/* Sahne + sohbet ızgarası */
+.stage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 366px;
+  gap: clamp(14px, 1.6vw, 22px);
+  align-items: start;
 }
-.offline-screen.active { display: flex; }
 
-.offline-icon { font-size: 48px; margin-bottom: 16px; animation: float 4s ease-in-out infinite; color: var(--md-primary); }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+/* monitör */
+.monitor {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, #131020, #0c0a13);
+  box-shadow:
+    0 34px 70px -40px #000,
+    0 2px 0 rgba(255, 255, 255, .03) inset;
+  overflow: hidden;
+}
 
-.offline-screen h2 { font-size: 24px; font-weight: 700; color: var(--md-primary); margin-bottom: 8px; }
-.offline-screen p { color: var(--md-on-surface-variant); max-width: 400px; margin-bottom: 24px; font-size: 14px; }
+.monitor__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, .015);
+}
+.monitor__bar .micro { letter-spacing: .1em; }
+.monitor__who { color: var(--muted); text-transform: none; letter-spacing: .02em; font-size: 11px; }
+.monitor__right {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.monitor__right .mono {
+  font-size: 11px;
+  color: var(--faint);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
 
-/* ─────────────────────────────────────────────────────────────
-   Kanal Bilgi Çubuğu
-   ───────────────────────────────────────────────────────────── */
-.channel-bar {
-  display: flex; align-items: center; gap: 16px;
-  margin-top: 16px; padding: 16px;
-  background: var(--md-surface-container-low);
-  border-radius: var(--shape-lg); border: 1px solid var(--md-outline-variant);
+/* Tally: yayın sırasında yanan küçük lamba. */
+.tally {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid #4a4163;
+  background: #1e1a2c;
+  transition: background-color .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+body[data-live="true"] .tally {
+  background: var(--lime);
+  border-color: var(--lime);
+  box-shadow: 0 0 0 3px rgba(198, 242, 78, .16), 0 0 14px rgba(198, 242, 78, .55);
+}
+
+/* ── Ekran ── */
+.screen {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #06050a;
+  isolation: isolate;
+}
+.screen iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity .45s var(--ease);
+}
+body[data-live="true"] .screen iframe { opacity: 1; }
+
+/* Ekranın kenarına doğru kararan ince vinyet — video monitör çerçevesinin
+   içindeymiş gibi dursun diye. Üstüne bir şey koymuyor, sadece kenar. */
+.screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(132% 102% at 50% 50%, transparent 56%, rgba(0, 0, 0, .5) 100%);
+}
+
+/* Alt çene: cihazın fiziksel yüzeyi. */
+.monitor__chin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 15px;
+  border-top: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, #14111f, #0d0a15);
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, .04) inset;
+}
+.monitor__led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #342d4c;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .55);
+  transition: background-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+body[data-live="true"] .monitor__led {
+  background: var(--lime);
+  box-shadow: 0 0 9px rgba(198, 242, 78, .75);
+}
+.monitor__model {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+  color: #4a4362;
+}
+.monitor__knobs {
+  margin-left: auto;
+  display: flex;
+  gap: 9px;
+}
+.monitor__knobs i {
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #1b1729;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 1px 0 rgba(0, 0, 0, .5);
+}
+
+/* Vizör köşeleri — oynatıcının üstünde, tıklamayı engellemiyor. */
+.screen__brackets { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.screen__brackets::before,
+.screen__brackets::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(255, 255, 255, .2);
+}
+.screen__brackets::before { top: 12px; left: 12px; border-right: 0; border-bottom: 0; }
+.screen__brackets::after { bottom: 12px; right: 12px; border-left: 0; border-top: 0; }
+
+/* kapalı ekran */
+.slate {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(22px, 4vw, 52px);
+  background:
+    radial-gradient(120% 130% at 50% -10%, #211a3a 0%, #120f1d 46%, #08070d 100%);
+  overflow: hidden;
+}
+/* Arkada duran dev "OFF AIR" yazısı — %3.5 opaklık, sadece doku. */
+.slate__ghost {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: clamp(64px, 15vw, 210px);
+  line-height: 1;
+  letter-spacing: .01em;
+  color: #fff;
+  opacity: .035;
+  transform: rotate(-4deg);
+  pointer-events: none;
+  user-select: none;
+}
+/* Kapalı ekranda ince tarama çizgileri: CRT hissi. Canlı oynatıcının üstüne
+   koymuyorum — videoyun üstünde kayma yapar, sadece boş ekranda duruyor. */
+.slate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, .03) 0 1px, transparent 1px 4px);
+  mix-blend-mode: soft-light;
+}
+body[data-live="true"] .slate { display: none; }
+
+.slate__mark {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  border: 1px solid #332b4d;
+  background: linear-gradient(160deg, #241c3c, #14101f);
+  color: var(--violet);
+}
+.slate__mark .ico { width: 28px; height: 28px; stroke-width: 1.35; }
+
+.slate__kicker { color: var(--lime-dim); margin-bottom: 10px; }
+.slate__title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(30px, 4.4vw, 46px);
+  line-height: 1.06;
+  letter-spacing: -.015em;
+  color: #f6f1ff;
+}
+.slate__title em { font-style: italic; color: var(--violet); }
+.slate__text {
+  max-width: 44ch;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  text-wrap: pretty;
+}
+.slate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 22px;
+}
+.slate__foot {
+  margin-top: 20px;
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #615a76;
+}
+.slate__foot span { color: var(--muted); }
+
+/* kanal kartı */
+.identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 15px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .028), rgba(255, 255, 255, .006));
 }
 
 .avatar {
-  width: 48px; height: 48px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--md-primary-container), var(--md-surface-container-highest));
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 18px; color: var(--md-primary);
-  border: 2px solid var(--md-outline-variant); overflow: hidden;
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--violet);
+  background: linear-gradient(150deg, #2a2142, #161220);
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--line);
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* Yayın açıkken avatarın etrafında ince lime halka. */
+.avatar::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  transition: border-color .4s var(--ease);
+}
+body[data-live="true"] .avatar::after { border-color: rgba(198, 242, 78, .6); }
 
-.channel-info { flex: 1; min-width: 0; }
-.channel-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-.channel-sub {
-  font-size: 13px; color: var(--md-on-surface-variant);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-family: var(--font-mono); margin-top: 2px;
+.who { min-width: 0; }
+.who__name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+.who__name .ico { color: var(--violet); width: 15px; height: 15px; }
+.who__line {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.channel-stats { display: flex; gap: 20px; text-align: right; margin-left: auto; }
-.stat-box span {
-  display: block; font-size: 10.5px; text-transform: uppercase;
-  letter-spacing: 0.05em; color: var(--md-on-surface-variant); font-family: var(--font-mono);
+/* Okuma göstergeleri */
+.readouts {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-left: 1px solid var(--line-soft);
+  padding-left: 16px;
 }
-.stat-box strong { font-size: 16px; font-weight: 700; color: var(--md-on-surface); }
+.readout {
+  min-width: 74px;
+  padding: 1px 14px 0 0;
+  text-align: left;
+}
+.readout + .readout {
+  border-left: 1px solid var(--line-soft);
+  padding-left: 14px;
+}
+.readout__label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.readout__value {
+  font-family: var(--mono);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  transition: color .3s var(--ease);
+}
+.readout__value.is-muted { color: #5d5673; }
+body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
 
-/* ─────────────────────────────────────────────────────────────
-   Sohbet Alanı
-   ───────────────────────────────────────────────────────────── */
-.chat-container {
-  background: var(--md-surface-container-low);
-  border-radius: var(--shape-md); border: 1px solid var(--md-outline-variant);
-  display: flex; flex-direction: column;
-  height: calc(100vh - 180px); min-height: 500px; max-height: 800px; overflow: hidden;
+.identity__actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
-.chat-header {
-  padding: 12px 16px; background: var(--md-surface-container);
-  border-bottom: 1px solid var(--md-outline-variant);
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; font-weight: 600;
+/* sohbet */
+.comms {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 104px;
 }
 
-.chat-status {
-  font-family: var(--font-mono); font-size: 11px;
-  padding: 3px 8px; border-radius: 6px;
-  background: var(--md-surface-container-highest); color: var(--md-on-surface-variant);
-}
-.chat-status.logged-in { background: var(--md-success-container); color: var(--md-success); }
-
-.chat-body { flex: 1; position: relative; background: var(--md-surface); }
-.chat-body iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
-.chat-body::after { content: ''; position: absolute; inset: 0; z-index: 2; background: transparent; }
-
-.chat-composer {
-  padding: 12px; background: var(--md-surface-container);
-  border-top: 1px solid var(--md-outline-variant);
-  display: flex; gap: 8px;
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: clamp(420px, calc(100svh - 240px), 720px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: #0f0c17;
+  overflow: hidden;
 }
 
-.chat-composer input {
-  flex: 1; padding: 10px 16px; border-radius: var(--shape-pill);
-  border: 1px solid var(--md-outline-variant);
-  background: var(--md-surface); color: var(--md-on-surface);
-  font-family: inherit; font-size: 13.5px; outline: none;
-  transition: border-color 0.2s;
+.chat__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, .018);
 }
-.chat-composer input:focus { border-color: var(--md-primary); }
-.chat-composer input:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.chat-composer button {
-  padding: 0 20px; border-radius: var(--shape-pill); border: none;
-  background: var(--md-primary); color: var(--md-on-primary);
-  font-weight: 700; cursor: pointer; transition: all 0.2s;
+.chat__head .ico { color: var(--faint); }
+.chat__title { font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; }
+.chat__state {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--faint);
 }
-.chat-composer button:disabled { background: var(--md-surface-container-highest); color: var(--md-on-surface-variant); cursor: not-allowed; }
-.chat-composer button:hover:not(:disabled) { background: #E0D4FF; }
-
-.login-hint {
-  display: none; align-items: center; justify-content: center; gap: 8px;
-  padding: 10px; background: var(--md-surface-container-high);
-  font-size: 12px; font-family: var(--font-mono);
-  color: var(--md-on-surface-variant); border-top: 1px solid var(--md-outline-variant);
+.chat__state::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .8;
 }
-.login-hint.active { display: flex; }
-.login-hint a { color: var(--md-primary); text-decoration: none; font-weight: 600; }
-.login-hint a:hover { text-decoration: underline; }
+.chat__state[data-on="true"] { color: var(--lime-dim); }
 
-/* ─────────────────────────────────────────────────────────────
-   Boş Ekranlar
-   ───────────────────────────────────────────────────────────── */
-.empty-state {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; padding: 80px 24px;
-  background: var(--md-surface-container-low); border: 1px dashed var(--md-outline-variant);
-  border-radius: var(--shape-lg); margin-top: 24px;
+.chat__frame {
+  position: relative;
+  flex: 1;
+  background: #0b0912;
+  min-height: 0;
 }
-.empty-state .material-symbols-outlined { font-size: 48px; margin-bottom: 16px; opacity: 0.7; color: var(--md-primary); }
-.empty-state h2 { font-size: 20px; margin-bottom: 8px; }
-.empty-state p { color: var(--md-on-surface-variant); max-width: 400px; margin-bottom: 24px; font-size: 14px; }
+.chat__frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
 
-/* ─────────────────────────────────────────────────────────────
-   Toast
-   ───────────────────────────────────────────────────────────── */
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-top: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, .018);
+}
+.composer__field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.composer input {
+  width: 100%;
+  height: 38px;
+  padding: 0 60px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #0a0810;
+  font-size: 13.5px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .18s var(--ease), background-color .18s var(--ease);
+}
+.composer input::placeholder { color: #5f5875; }
+.composer input:focus { border-color: #4a3f70; background: #0d0a15; }
+.composer input:disabled { color: #58516b; cursor: not-allowed; background: #0c0a13; }
+.composer input.is-sent { border-color: var(--lime-dim); }
+
+.composer__count {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #5f5875;
+  pointer-events: none;
+}
+.composer__count.is-near { color: var(--lime-dim); }
+.composer__count.is-over { color: var(--alert); }
+
+.composer__send {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--lime);
+  color: #10130a;
+  cursor: pointer;
+  transition: transform .16s var(--ease), background-color .18s var(--ease), opacity .18s var(--ease);
+}
+.composer__send:hover:not([disabled]) { background: #d4ff60; }
+.composer__send:active:not([disabled]) { transform: scale(.94); }
+.composer__send[disabled] { background: #241f33; color: #5f5875; cursor: not-allowed; }
+
+.chat__hint {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, .012);
+  font-size: 12px;
+  color: var(--muted);
+}
+.chat__hint.is-on { display: flex; }
+.chat__hint a { color: var(--lime); text-decoration: none; border-bottom: 1px solid rgba(198, 242, 78, .4); }
+.chat__hint a:hover { border-bottom-color: var(--lime); }
+
+.comms__note {
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.7;
+  letter-spacing: .04em;
+  color: #5b5470;
+  padding: 0 4px;
+}
+.comms__note kbd {
+  display: inline-block;
+  min-width: 16px;
+  padding: 1px 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .03);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* diğer sekmeler */
+.sheet {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 44px) 0 10px;
+}
+.sheet__kicker { margin-bottom: 12px; color: var(--violet); }
+.sheet h2 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(28px, 3.6vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -.015em;
+}
+.sheet h2 em { font-style: italic; color: var(--violet); }
+.sheet__lead {
+  margin-top: 12px;
+  max-width: 58ch;
+  color: var(--muted);
+  font-size: 14.5px;
+  text-wrap: pretty;
+}
+.sheet__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.note-card {
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, .018);
+  overflow: hidden;
+}
+.note-card > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  list-style: none;
+}
+.note-card > summary::-webkit-details-marker { display: none; }
+.note-card > summary .ico { color: var(--faint); }
+.note-card > summary::after {
+  content: '+';
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--faint);
+  transition: transform .2s var(--ease);
+}
+.note-card[open] > summary::after { transform: rotate(45deg); }
+.note-card__body {
+  padding: 0 16px 16px 44px;
+  font-size: 13.5px;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.note-card__body code {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .05);
+  color: #d8cdff;
+}
+
+/* Bilgi listesi */
+.deflist {
+  margin-top: 26px;
+  border-top: 1px solid var(--line);
+}
+.deflist__row {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 13.5px;
+}
+.deflist__row dt {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding-top: 3px;
+}
+.deflist__row dd { color: var(--muted); }
+.deflist__row dd strong { color: var(--text); font-weight: 500; }
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--faint);
+  vertical-align: 1px;
+}
+.status-dot[data-ok="true"] { background: var(--lime); }
+.status-dot[data-ok="false"] { background: var(--alert); }
+
+.kbd-list { display: flex; flex-wrap: wrap; gap: 7px 18px; }
+.kbd-list span { display: inline-flex; align-items: center; gap: 6px; }
+.kbd-list kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, .03);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text);
+  text-align: center;
+}
+
+/* alt bilgi */
+.foot {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max);
+  margin: clamp(34px, 5vw, 60px) auto 0;
+  padding: 18px var(--gutter) 30px;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  font-size: 12px;
+  color: #6c657f;
+}
+.foot__sep { color: #3a3450; }
+.foot a { color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent; }
+.foot a:hover { color: var(--text); border-bottom-color: var(--line); }
+.foot__right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.foot__right .mono { font-size: 10.5px; letter-spacing: .06em; color: #5b5470; }
+
+/* bildirimler */
+.toasts {
+  position: fixed;
+  right: clamp(12px, 2vw, 22px);
+  bottom: clamp(12px, 2vw, 22px);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(340px, calc(100vw - 24px));
+  pointer-events: none;
+}
 .toast {
-  position: fixed; bottom: 24px; right: 24px;
-  background: var(--md-surface-container-high); border: 1px solid var(--md-outline-variant);
-  border-radius: var(--shape-md); padding: 16px; display: flex; align-items: flex-start; gap: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  transform: translateY(100px); opacity: 0;
-  transition: all 0.4s var(--md-ease-emphasized);
-  z-index: 1000; max-width: 350px;
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 12px 12px 12px 13px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--lime);
+  border-radius: var(--r-sm);
+  background: #14101f;
+  box-shadow: 0 18px 40px -20px #000;
+  animation: toast-in .28s var(--ease) both;
 }
-.toast.show { transform: translateY(0); opacity: 1; }
-.toast-icon {
-  width: 24px; height: 24px; border-radius: 50%;
-  background: var(--md-primary-container); color: var(--md-primary);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: bold; flex-shrink: 0;
+.toast.is-out { animation: toast-out .22s var(--ease) both; }
+.toast[data-kind="error"] { border-left-color: var(--alert); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to   { opacity: 1; transform: none; }
 }
-.toast.error .toast-icon { background: var(--md-error-container); color: var(--md-error); }
-.toast-content h4 { font-size: 14px; margin-bottom: 2px; }
-.toast-content p { font-size: 12.5px; color: var(--md-on-surface-variant); line-height: 1.4; }
+@keyframes toast-out {
+  to { opacity: 0; transform: translateY(6px); }
+}
+.toast__icon { color: var(--lime); margin-top: 1px; }
+.toast[data-kind="error"] .toast__icon { color: var(--alert); }
+.toast__title { font-size: 13px; font-weight: 600; }
+.toast__msg { font-size: 12.5px; color: var(--muted); margin-top: 1px; text-wrap: pretty; }
+.toast__close {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+}
+.toast__close:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
 
-@media (max-width: 640px) {
-  .channel-bar { flex-wrap: wrap; }
-  .channel-stats { width: 100%; justify-content: space-between; text-align: left; margin-top: 8px; margin-left: 0; }
-  .brand span { display: none; }
-  .appbar-inner { padding: 12px 16px; }
-  .main-container { padding: 16px; }
-  .chat-container { height: 500px; }
+/* duyarlı */
+@media (max-width: 1080px) {
+  .stage-grid { grid-template-columns: 1fr; }
+  .comms { position: static; }
+  .chat { height: 460px; }
+}
+
+@media (max-width: 900px) {
+  .top__bar {
+    grid-template-columns: auto auto;
+    gap: 12px;
+  }
+  .nav {
+    grid-column: 1 / -1;
+    justify-self: start;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 calc(var(--gutter) * -1);
+    padding: 0 var(--gutter);
+    border-top: 1px solid var(--line-soft);
+    padding-top: 8px;
+    margin-top: 2px;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .tab { padding: 8px 11px 10px; }
+  .brand__slash { display: none; }
+  .identity {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .readouts {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--line-soft);
+    padding: 12px 0 0;
+    margin-top: 2px;
+  }
+  .readout { flex: 1; }
+  .identity__actions { grid-column: 1 / -1; }
+  .identity__actions .btn { flex: 1; }
+}
+
+@media (max-width: 560px) {
+  body { font-size: 14.5px; }
+  .top__rule { display: none; }
+  .top__bar { padding-top: 11px; padding-bottom: 0; }
+  .brand__name { font-size: 20px; }
+  .brand__mark { width: 34px; height: 34px; border-radius: 9px; }
+  .chip { height: 32px; padding: 0 11px; }
+  #logoutBtn span { display: none; }
+  /* Dar ekranda 16:9 kutu kapalı ekranı kırpıyordu; kapalıyken yüksekliği
+     içeriğe bırakıyorum. Yayın açılınca tekrar 16:9'a dönüyor. */
+  body[data-live="false"] .screen { aspect-ratio: auto; }
+  body[data-live="false"] .slate { position: relative; inset: auto; padding: 30px 20px 26px; }
+  .slate__text { font-size: 13px; }
+  .slate__actions .btn { flex: 1; }
+  .deflist__row { grid-template-columns: 1fr; gap: 4px; }
+  .note-card__body { padding-left: 16px; }
+  .foot__right { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
 }
 </style>
 </head>
-<body>
+<body data-live="false">
 
-<header class="appbar">
-  <div class="appbar-inner">
-    <div class="brand">
-      KickForge <span>/ mor-tilki</span>
-    </div>
-    
-    <div class="header-actions">
-      <div id="statusChip" class="status-chip" data-state="offline">
-        <span class="dot"></span>
-        <span id="statusText">Kontrol ediliyor</span>
-      </div>
-      
-      <button id="loginBtn" class="btn btn-primary" onclick="window.location.href='/api/auth'" style="display: none;">
-        Kick ile Giriş Yap
+<a class="skip" href="#main">İçeriğe geç</a>
+
+<!-- İkon seti. Hepsi 24×24 ızgara, 1.6 çizgi kalınlığı. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-fox" viewBox="0 0 24 24">
+      <path d="M3.5 3.2l4 3h9l4-3 .6 8.4c0 5.1-4 8.8-8.6 8.8S3 16.7 3 11.6l.5-8.4z" />
+      <path d="M9 12.4h1.6M14.4 12.4H16M10.8 15.9h2.4" />
+    </symbol>
+    <symbol id="i-check-badge" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.6" fill="currentColor" stroke="none" />
+      <path d="M8.4 12.3l2.4 2.4 4.8-5" stroke="#0a0810" stroke-width="1.9" />
+    </symbol>
+    <symbol id="i-arrow-out" viewBox="0 0 24 24">
+      <path d="M7.5 16.5L16.5 7.5M9.4 7.5h7.1v7.1" />
+    </symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24">
+      <path d="M2.6 12S6.2 6.6 12 6.6 21.4 12 21.4 12 17.8 17.4 12 17.4 2.6 12 2.6 12z" />
+      <circle cx="12" cy="12" r="2.9" />
+    </symbol>
+    <symbol id="i-users" viewBox="0 0 24 24">
+      <path d="M9.2 11.4a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2z" />
+      <path d="M2.8 20c0-3.5 2.9-5.8 6.4-5.8s6.4 2.3 6.4 5.8" />
+      <path d="M16.4 4.9a3.2 3.2 0 0 1 0 6.1M17.8 14.6c2.2.6 3.6 2.3 3.6 4.6" />
+    </symbol>
+    <symbol id="i-send" viewBox="0 0 24 24">
+      <path d="M3.8 12.2L20.2 4l-6.3 16-3-6.6-7.1-1.2z" />
+      <path d="M10.9 13.4L20.2 4" />
+    </symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24">
+      <path d="M20 12a8 8 0 1 1-2.3-5.7" />
+      <path d="M20.2 4.2v4.3h-4.3" />
+    </symbol>
+    <symbol id="i-login" viewBox="0 0 24 24">
+      <path d="M14.5 3.8H19v16.4h-4.5" />
+      <path d="M10.6 8.2L14.4 12l-3.8 3.8M3.6 12h10.4" />
+    </symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24">
+      <path d="M9.5 3.8H5v16.4h4.5" />
+      <path d="M13.4 8.2L17.2 12l-3.8 3.8M17 12H6.4" />
+    </symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24">
+      <path d="M4 5.4h16v9.9H9.3L4 19.2V5.4z" />
+      <path d="M8.2 9.4h7.6M8.2 12.4h4.8" />
+    </symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="11" height="11" rx="2.2" />
+      <path d="M15.4 6.2A2.2 2.2 0 0 0 13.2 4H6.2A2.2 2.2 0 0 0 4 6.2v7a2.2 2.2 0 0 0 2.2 2.2" />
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24">
+      <path d="M12 4.2l8.4 15H3.6l8.4-15z" />
+      <path d="M12 10v4.2M12 17.1v.1" />
+    </symbol>
+    <symbol id="i-info" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.6" />
+      <path d="M12 11v5.2M12 8v.1" />
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.4" />
+      <path d="M12 7.4V12l3.2 2" />
+    </symbol>
+    <symbol id="i-film" viewBox="0 0 24 24">
+      <rect x="3.4" y="7.6" width="17.2" height="12.4" rx="2" />
+      <path d="M3.6 7.6l1.8-4 15 2.4-1 1.6M8.2 3.9l1 3.7M13.4 4.5l1 3.3" />
+    </symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24">
+      <path d="M3.4 6.6h17.2v3.2H3.4zM5.2 9.8v9.6h13.6V9.8" />
+      <path d="M9.6 13.6h4.8" />
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24">
+      <path d="M7 7l10 10M17 7L7 17" />
+    </symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="top__rule">
+    <span class="micro">yayın kontrolü</span>
+    <span class="micro" aria-hidden="true">·</span>
+    <span class="micro">mor-tilki</span>
+    <span class="micro top__stamp">
+      <svg class="ico ico--sm" aria-hidden="true"><use href="#i-clock" /></svg>
+      <time id="clockNow" datetime="">--:--</time>
+      <span>ist</span>
+    </span>
+  </div>
+
+  <div class="top__bar">
+    <a class="brand" href="#canli" aria-label="mor tilki · ana sayfa">
+      <span class="brand__mark"><svg class="ico" aria-hidden="true"><use href="#i-fox" /></svg></span>
+      <span class="brand__name">mor tilki</span>
+      <span class="brand__slash">/ kick</span>
+    </a>
+
+    <nav class="nav" role="tablist" aria-label="Sayfa bölümleri">
+      <button class="tab" type="button" role="tab" id="tab-live" aria-selected="true" aria-controls="panel-live" data-tab="live">
+        <span class="tab__no">01</span> Canlı
       </button>
-      <button id="logoutBtn" class="btn btn-outline" onclick="handleLogout()" style="display: none;">
-        Çıkış Yap
+      <button class="tab" type="button" role="tab" id="tab-archive" aria-selected="false" aria-controls="panel-archive" data-tab="archive" tabindex="-1">
+        <span class="tab__no">02</span> Arşiv
       </button>
-      
-      <a href="https://kick.com/mor-tilki" target="_blank" rel="noopener noreferrer" class="btn btn-icon" title="Kick'te Aç">
-        <span class="material-symbols-outlined">open_in_new</span>
+      <button class="tab" type="button" role="tab" id="tab-clips" aria-selected="false" aria-controls="panel-clips" data-tab="clips" tabindex="-1">
+        <span class="tab__no">03</span> Klipler
+      </button>
+      <button class="tab" type="button" role="tab" id="tab-about" aria-selected="false" aria-controls="panel-about" data-tab="about" tabindex="-1">
+        <span class="tab__no">04</span> Hakkında
+      </button>
+    </nav>
+
+    <div class="top__actions">
+      <span class="chip" id="statusChip" data-live="false" role="status" aria-live="polite">
+        <span class="chip__dot" aria-hidden="true"></span>
+        <span id="statusText">kontrol ediliyor</span>
+      </span>
+
+      <a class="btn btn--violet" id="loginBtn" href="/api/auth" hidden>
+        <svg class="ico ico--sm" aria-hidden="true"><use href="#i-login" /></svg>
+        <span>giriş yap</span>
+      </a>
+
+      <button class="btn btn--ghost" id="logoutBtn" type="button" hidden>
+        <svg class="ico ico--sm" aria-hidden="true"><use href="#i-logout" /></svg>
+        <span>çıkış</span>
+      </button>
+
+      <a class="btn btn--icon" href="https://kick.com/mor-tilki" target="_blank" rel="noopener noreferrer" title="Kick'te aç" aria-label="Kick'te aç">
+        <svg class="ico ico--sm" aria-hidden="true"><use href="#i-arrow-out" /></svg>
       </a>
     </div>
   </div>
-  
-  <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" aria-selected="true" data-target="panel-live">
-      <span class="material-symbols-outlined">live_tv</span> Canlı Yayın
-    </button>
-    <button class="tab" role="tab" aria-selected="false" data-target="panel-archive">
-      <span class="material-symbols-outlined">video_library</span> Arşiv
-    </button>
-    <button class="tab" role="tab" aria-selected="false" data-target="panel-clips">
-      <span class="material-symbols-outlined">movie</span> Klipler
-    </button>
-    <button class="tab" role="tab" aria-selected="false" data-target="panel-about">
-      <span class="material-symbols-outlined">info</span> Hakkında
-    </button>
-  </nav>
 </header>
 
-<main class="main-container">
-  
-  <!-- CANLI YAYIN -->
-  <section id="panel-live" class="panel active">
-    <div class="live-grid">
-      
-      <div class="player-section">
-        <div class="player-wrapper">
-          <iframe id="kickPlayer" src="https://player.kick.com/mor-tilki?muted=true" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>
-          
-          <div id="offlineScreen" class="offline-screen">
-            <span class="material-symbols-outlined offline-icon">bedtime</span>
-            <h2>Mor Tilki Şu An Yayında Değil</h2>
-            <p>Bir sonraki yayını kaçırmamak için Kick üzerinden takip edebilirsin. Yayın başladığında bu ekran otomatik olarak kaybolur.</p>
-            <a href="https://kick.com/mor-tilki" target="_blank" class="btn btn-primary">
-              <span class="material-symbols-outlined">favorite</span> Kick'te Takip Et
-            </a>
-          </div>
-        </div>
-        
-        <div class="channel-bar">
-          <div id="channelAvatar" class="avatar">MT</div>
-          <div class="channel-info">
-            <div class="channel-title">
-              Mor Tilki
-              <span id="verifiedIcon" class="material-symbols-outlined filled" style="display:none; color: var(--md-primary); font-size: 18px;">verified</span>
-            </div>
-            <div id="channelTitle" class="channel-sub">Yayın bilgisi yükleniyor...</div>
-          </div>
-          
-          <!-- Takip butonu yerine doğrudan Kick sayfasına yönlendiren buton -->
-          <a href="https://kick.com/mor-tilki" target="_blank" class="btn btn-outline" style="margin-left: 12px; padding: 6px 16px; font-size: 12px;">
-            <span class="material-symbols-outlined" style="font-size: 16px;">favorite</span>
-            Takip Durumu
-          </a>
+<main id="main" class="wrap">
 
-          <div class="channel-stats">
-            <div class="stat-box">
-              <span>İzleyici</span>
-              <strong id="viewerCount">—</strong>
+  <div class="warn" id="netWarn" role="status" hidden>
+    <svg class="ico" aria-hidden="true"><use href="#i-alert" /></svg>
+    <span>Kanal verisi gelmedi. Kick'in herkese açık ucu ara sıra boş dönüyor — tekrar deneyebiliriz.</span>
+    <button class="warn__retry" type="button" data-retry>tekrar dene</button>
+  </div>
+
+  <!-- canlı -->
+  <section class="panel is-active" id="panel-live" role="tabpanel" aria-labelledby="tab-live" tabindex="0">
+    <div class="stage-grid">
+
+      <div class="stage">
+        <div class="monitor">
+          <div class="monitor__bar">
+            <span class="tally" aria-hidden="true"></span>
+            <span class="micro" id="tallyLabel" style="color:var(--muted)">kapalı</span>
+            <span class="monitor__who mono">mor-tilki</span>
+            <span class="monitor__right">
+              <span class="mono">
+                <svg class="ico ico--sm" aria-hidden="true"><use href="#i-eye" /></svg>
+                <span id="monitorViewers">—</span>
+              </span>
+              <span class="mono">kick.com</span>
+            </span>
+          </div>
+
+          <div class="screen">
+            <!-- src bilerek boş: yayın açık olduğunu doğrulamadan oynatıcı yüklemiyoruz. -->
+            <iframe
+              id="playerFrame"
+              title="mor-tilki canlı yayın oynatıcısı"
+              data-src="https://player.kick.com/mor-tilki?muted=true"
+              allowfullscreen
+              allow="autoplay; fullscreen; picture-in-picture"
+              referrerpolicy="strict-origin-when-cross-origin"
+            ></iframe>
+
+            <div class="slate" id="slate">
+              <span class="slate__ghost" aria-hidden="true">off air</span>
+              <div class="slate__mark">
+                <svg class="ico" aria-hidden="true"><use href="#i-fox" /></svg>
+              </div>
+              <p class="micro slate__kicker">yayın kapalı</p>
+              <h1 class="slate__title">tilki <em>uyuyor.</em></h1>
+              <p class="slate__text">
+                Yayın açıldığı an bu ekran kendiliğinden kalkar. Sekmeyi açık bırakırsan
+                ilk saniyeleri kaçırmazsın.
+              </p>
+              <div class="slate__actions">
+                <a class="btn btn--lime" href="https://kick.com/mor-tilki" target="_blank" rel="noopener noreferrer">
+                  kick'te takip et
+                  <svg class="ico ico--sm" aria-hidden="true"><use href="#i-arrow-out" /></svg>
+                </a>
+                <button class="btn btn--ghost" type="button" data-retry>
+                  <svg class="ico ico--sm" aria-hidden="true"><use href="#i-refresh" /></svg>
+                  durumu yenile
+                </button>
+              </div>
+              <p class="slate__foot mono">son kontrol · <span id="slateCheck">—</span></p>
             </div>
-            <div class="stat-box">
-              <span>Takipçi</span>
-              <strong id="followerCount">—</strong>
-            </div>
+
+            <div class="screen__brackets" aria-hidden="true"></div>
+          </div>
+
+          <div class="monitor__chin" aria-hidden="true">
+            <span class="monitor__led"></span>
+            <span class="monitor__model">mt-01 / kontrol</span>
+            <span class="monitor__knobs"><i></i><i></i></span>
           </div>
         </div>
-      </div>
-      
-      <div class="chat-section">
-        <div class="chat-container">
-          <div class="chat-header">
-            <span>Sohbet</span>
-            <span id="chatStatus" class="chat-status">Bağlanıyor...</span>
+
+        <!-- Kanal kartı -->
+        <div class="identity">
+          <div class="avatar" id="channelAvatar" aria-hidden="true">MT</div>
+
+          <div class="who">
+            <div class="who__name">
+              <span>mor tilki</span>
+              <svg class="ico" id="verifiedIcon" aria-label="doğrulanmış kanal" hidden><use href="#i-check-badge" /></svg>
+            </div>
+            <div class="who__line" id="sessionTitle">kanal bilgisi yükleniyor…</div>
           </div>
-          
-          <div class="chat-body">
-            <iframe id="chatIframe" src="https://kick.com/popout/mor-tilki/chat"></iframe>
+
+          <div class="readouts">
+            <div class="readout readout--viewers">
+              <div class="readout__label">
+                <svg class="ico" style="width:12px;height:12px" aria-hidden="true"><use href="#i-eye" /></svg>
+                izleyici
+              </div>
+              <div class="readout__value is-muted" id="viewerCount">—</div>
+            </div>
+            <div class="readout">
+              <div class="readout__label">
+                <svg class="ico" style="width:12px;height:12px" aria-hidden="true"><use href="#i-users" /></svg>
+                takipçi
+              </div>
+              <div class="readout__value" id="followerCount">—</div>
+            </div>
           </div>
-          
-          <div class="chat-composer">
-            <input type="text" id="chatInput" placeholder="Mesaj yaz..." maxlength="500" autocomplete="off" disabled />
-            <button id="sendBtn" disabled>
-              <span class="material-symbols-outlined">send</span>
+
+          <div class="identity__actions">
+            <button class="btn btn--icon" type="button" id="refreshBtn" title="Durumu yenile" aria-label="Durumu yenile">
+              <svg class="ico ico--sm" id="refreshIcon" aria-hidden="true"><use href="#i-refresh" /></svg>
+            </button>
+            <button class="btn btn--icon" type="button" id="shareBtn" title="Kanal bağlantısını kopyala" aria-label="Kanal bağlantısını kopyala">
+              <svg class="ico ico--sm" aria-hidden="true"><use href="#i-copy" /></svg>
             </button>
           </div>
-          
-          <div id="loginHint" class="login-hint">
-            Sohbete yazmak için <a href="/api/auth">Kick ile giriş yapmalısın</a>.
+        </div>
+      </div>
+
+      <!-- Sohbet -->
+      <aside class="comms" aria-label="Sohbet">
+        <div class="chat">
+          <div class="chat__head">
+            <svg class="ico ico--sm" aria-hidden="true"><use href="#i-chat" /></svg>
+            <span class="chat__title">sohbet</span>
+            <span class="chat__state" id="chatState" data-on="false">misafir</span>
+          </div>
+
+          <div class="chat__frame">
+            <iframe
+              id="chatFrame"
+              src="https://kick.com/popout/mor-tilki/chat"
+              title="mor-tilki sohbet akışı"
+              loading="lazy"
+            ></iframe>
+          </div>
+
+          <form class="composer" id="composer" autocomplete="off">
+            <div class="composer__field">
+              <label class="sr-only" for="chatInput">Sohbete mesaj yaz</label>
+              <input
+                type="text"
+                id="chatInput"
+                name="message"
+                placeholder="sessizce izlemek de bir seçenek…"
+                maxlength="500"
+                disabled
+              />
+              <span class="composer__count" id="charCount" aria-hidden="true">0/500</span>
+            </div>
+            <button class="composer__send" id="sendBtn" type="submit" disabled aria-label="Mesajı gönder">
+              <svg class="ico" aria-hidden="true"><use href="#i-send" /></svg>
+            </button>
+          </form>
+
+          <div class="chat__hint" id="loginHint">
+            <span>yazmak için önce</span>
+            <a href="/api/auth">kick ile giriş yap</a>
+            <span>— okumak için bir şey gerekmiyor.</span>
           </div>
         </div>
+
+        <p class="comms__note">
+          <kbd>/</kbd> mesaj kutusu · <kbd>r</kbd> yenile · <kbd>1</kbd>–<kbd>4</kbd> sekmeler
+        </p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- arşiv -->
+  <section class="panel" id="panel-archive" role="tabpanel" aria-labelledby="tab-archive" tabindex="0">
+    <div class="sheet">
+      <p class="micro sheet__kicker">geçmiş yayınlar</p>
+      <h2>Arşiv burada <em>başlamıyor.</em></h2>
+      <p class="sheet__lead">
+        Eski yayınları listelemek isterdim ama Kick'in herkese açık API'sinde
+        geçmiş yayınları döndüren bir uç yok. Veriyi uydurmaktansa seni
+        doğrudan kanalın kendi arşivine gönderiyorum — orada hepsi duruyor.
+      </p>
+      <div class="sheet__actions">
+        <a class="btn btn--lime" href="https://kick.com/mor-tilki/videos" target="_blank" rel="noopener noreferrer">
+          kick'te arşivi aç
+          <svg class="ico ico--sm" aria-hidden="true"><use href="#i-arrow-out" /></svg>
+        </a>
       </div>
-      
-    </div>
-  </section>
 
-  <!-- ARŞİV -->
-  <section id="panel-archive" class="panel">
-    <div class="empty-state">
-      <span class="material-symbols-outlined">video_library</span>
-      <h2>Arşiv API'den Çekilemiyor</h2>
-      <p>Kick'in herkese açık API'sinde geçmiş yayınları listeleyen bir uç nokta bulunmuyor. Eski yayınlara göz atmak için aşağıdaki butonu kullanabilirsin.</p>
-      <a href="https://kick.com/mor-tilki/videos" target="_blank" class="btn btn-tonal">
-        <span class="material-symbols-outlined">open_in_new</span> Kick'te Arşivi Aç
-      </a>
-    </div>
-  </section>
-
-  <!-- KLİPLER -->
-  <section id="panel-clips" class="panel">
-    <div class="empty-state">
-      <span class="material-symbols-outlined">movie</span>
-      <h2>Klipler API'de Yok</h2>
-      <p>Aynı şekilde, klipleri listelemek için de resmi bir API ucu bulunmuyor. Mor Tilki'nin kliplerine doğrudan Kick üzerinden ulaşabilirsin.</p>
-      <a href="https://kick.com/mor-tilki/clips" target="_blank" class="btn btn-tonal">
-        <span class="material-symbols-outlined">open_in_new</span> Kick'te Klipleri Aç
-      </a>
-    </div>
-  </section>
-
-  <!-- HAKKINDA -->
-  <section id="panel-about" class="panel">
-    <div class="empty-state" style="align-items: flex-start; text-align: left; border-style: solid;">
-      <h2>KickForge Hakkında</h2>
-      <p style="margin-top: 12px; margin-bottom: 12px;">
-        Bu proje, <strong>mor-tilki</strong> yayınlarını daha temiz ve modern bir arayüzde izlemek için yapıldı. 
-        Kick'in kendi oynatıcısını ve sohbet altyapısını kullanır. 
-      </p>
-      <p style="margin-bottom: 24px; font-family: var(--font-mono); font-size: 12px; color: var(--md-on-surface-variant);">
-        // Vercel Serverless, OAuth 2.1 (PKCE) ve Refresh Token mekanizmaları kullanılarak geliştirilmiştir.
-      </p>
-      
-      <div style="padding: 16px; background: var(--md-surface-container); border-radius: var(--shape-sm); border: 1px solid var(--md-outline-variant); width: 100%;">
-        <h3 style="font-size: 14px; margin-bottom: 8px;">Sistem Durumu</h3>
-        <div style="display: flex; gap: 24px; font-size: 13px; color: var(--md-on-surface-variant);">
-          <div>API Bağlantısı: <span id="apiStatus" style="color: var(--md-success); font-weight: bold;">Sağlıklı</span></div>
-          <div>Oturum: <span id="authStatus" style="font-weight: bold;">Kontrol ediliyor...</span></div>
+      <details class="note-card">
+        <summary>
+          <svg class="ico ico--sm" aria-hidden="true"><use href="#i-info" /></svg>
+          neden burada liste yok?
+        </summary>
+        <div class="note-card__body">
+          <p>
+            Kullandığımız uç <code>kick.com/api/v2/channels/mor-tilki</code>; yalnızca
+            anlık durumu (canlı mı, kaç izleyici, takipçi sayısı) veriyor.
+            <code>videos</code> ve <code>clips</code> için resmî ya da belgelenmiş bir
+            uç bulunmadığı için bu sekmeyi tarayıcıda kazımaya çalışmak yerine
+            boş bıraktım. Kazıma hem kırılgan hem de hoş değil.
+          </p>
         </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- klipler -->
+  <section class="panel" id="panel-clips" role="tabpanel" aria-labelledby="tab-clips" tabindex="0">
+    <div class="sheet">
+      <p class="micro sheet__kicker">klipler</p>
+      <h2>Aynı hikâye, <em>farklı sekme.</em></h2>
+      <p class="sheet__lead">
+        Klipler de aynı sebeple burada listelenmiyor. En iyi klip zaten
+        yayının kendisinde oluyor; kalanlara Kick'ten bakabilirsin.
+      </p>
+      <div class="sheet__actions">
+        <a class="btn btn--ghost" href="https://kick.com/mor-tilki/clips" target="_blank" rel="noopener noreferrer">
+          kick'te klipleri aç
+          <svg class="ico ico--sm" aria-hidden="true"><use href="#i-arrow-out" /></svg>
+        </a>
       </div>
+
+      <details class="note-card">
+        <summary>
+          <svg class="ico ico--sm" aria-hidden="true"><use href="#i-film" /></svg>
+          listeyi kendim çekebilir miyim?
+        </summary>
+        <div class="note-card__body">
+          <p>
+            Kick'in web arayüzü klipleri kendi iç GraphQL'inden alıyor. Bu
+            uçlar kimlik doğrulaması ve sayfa başına değişen sorgular
+            istediği için statik bir sayfadan güvenilir şekilde çağrılamıyor.
+            Yapılacak doğru şey bir sunucu tarafı proxy yazmak; o da ayrı bir iş.
+          </p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- hakkında -->
+  <section class="panel" id="panel-about" role="tabpanel" aria-labelledby="tab-about" tabindex="0">
+    <div class="sheet">
+      <p class="micro sheet__kicker">hakkında</p>
+      <h2>Bu sayfa <em>ne işe yarıyor?</em></h2>
+      <p class="sheet__lead">
+        mor-tilki'nin yayınını Kick'in kendi oynatıcısıyla, gereksiz hiçbir
+        şey olmadan izlemek için yazdım. Tek bir kanal için tek bir ekran:
+        yayın açık mı, kaç kişi bakıyor, sohbet ne diyor.
+      </p>
+
+      <dl class="deflist">
+        <div class="deflist__row">
+          <dt>altyapı</dt>
+          <dd><strong>Vercel</strong> üzerinde statik sayfa + birkaç serverless fonksiyon.</dd>
+        </div>
+        <div class="deflist__row">
+          <dt>giriş</dt>
+          <dd><strong>OAuth 2.1 + PKCE</strong>. Token'lar <code>HttpOnly</code> çerezde; tarayıcıdaki JavaScript hiç görmüyor. Süresi dolan token arka planda refresh ile yenileniyor.</dd>
+        </div>
+        <div class="deflist__row">
+          <dt>veri</dt>
+          <dd>30 saniyede bir <code>/api/stats</code>. Sekme arka plandayken sorgu duruyor.</dd>
+        </div>
+        <div class="deflist__row">
+          <dt>sistem durumu</dt>
+          <dd>
+            <span class="status-dot" id="apiDot" data-ok="false"></span>
+            <span id="apiStatus">API kontrol ediliyor…</span>
+            <span style="color:#3a3450"> · </span>
+            <span class="status-dot" id="authDot" data-ok="false"></span>
+            <span id="authStatus">oturum kontrol ediliyor…</span>
+          </dd>
+        </div>
+        <div class="deflist__row">
+          <dt>klavye</dt>
+          <dd>
+            <div class="kbd-list">
+              <span><kbd>/</kbd> mesaj kutusu</span>
+              <span><kbd>r</kbd> durumu yenile</span>
+              <span><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> sekme</span>
+              <span><kbd>esc</kbd> kutuya odaklanmayı bırak</span>
+            </div>
+          </dd>
+        </div>
+        <div class="deflist__row">
+          <dt>not</dt>
+          <dd>
+            Burası Kick'in resmî bir ürünü değil; hayran işi, kendi kendine
+            çalışan bir izleme ekranı. İkonlar da font değil, sayfanın içinde
+            çizilmiş SVG.
+          </dd>
+        </div>
+      </dl>
+
+      <details class="note-card">
+        <summary>
+          <svg class="ico ico--sm" aria-hidden="true"><use href="#i-archive" /></svg>
+          eski sürümlerde ne değişti?
+        </summary>
+        <div class="note-card__body">
+          <p>
+            Takip butonu kaldırıldı (Kick'in iç API'si OAuth token'ı kabul etmiyor).
+            Material Symbols fontu atıldı, yerine sayfa içi SVG geldi. Oynatıcı
+            artık yayın kapalıyken hiç yüklenmiyor, sohbet de gerçekten
+            kaydırılabilir — önceden üstündeki görünmez katman tıklamaları yiyordu.
+          </p>
+        </div>
+      </details>
     </div>
   </section>
 
 </main>
 
-<!-- Toast -->
-<div id="toast" class="toast">
-  <div class="toast-icon">!</div>
-  <div class="toast-content">
-    <h4 id="toastTitle">Bilgi</h4>
-    <p id="toastMessage">İşlem tamamlandı.</p>
+<footer class="foot">
+  <span>© <span id="year">2026</span> KickForge</span>
+  <span class="foot__sep">·</span>
+  <span>mor-tilki için, tek kişilik bir izleme ekranı</span>
+  <span class="foot__sep">·</span>
+  <a href="https://kick.com/mor-tilki" target="_blank" rel="noopener noreferrer">kick.com/mor-tilki</a>
+  <span class="foot__sep">·</span>
+  <span class="mono" style="font-size:10.5px;letter-spacing:.06em;color:#5b5470">tek sayfa, tek kanal</span>
+  <span class="foot__right">
+    <span class="mono" id="lastCheck">son kontrol · —</span>
+  </span>
+</footer>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<noscript>
+  <div style="max-width:1380px;margin:0 auto;padding:0 24px 32px;color:#a89fbe;font-size:13px">
+    Bu sayfa canlı durumu JavaScript ile çekiyor. Oynatıcıya doğrudan
+    <a href="https://player.kick.com/mor-tilki" style="color:#c6f24e">buradan</a>,
+    sohbete <a href="https://kick.com/mor-tilki" style="color:#c6f24e">Kick üzerinden</a> ulaşabilirsin.
   </div>
-</div>
+</noscript>
 
 <script>
-/**
- * KickForge Frontend - Mor M3 + Material Symbols
- */
+(() => {
+  'use strict';
 
-let isLoggedIn = false;
-let broadcasterId = null;
+  /* küçük yardımcılar */
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-const el = {
-  statusChip: document.getElementById('statusChip'),
-  statusText: document.getElementById('statusText'),
-  loginBtn: document.getElementById('loginBtn'),
-  logoutBtn: document.getElementById('logoutBtn'),
-  kickPlayer: document.getElementById('kickPlayer'),
-  offlineScreen: document.getElementById('offlineScreen'),
-  channelAvatar: document.getElementById('channelAvatar'),
-  channelTitle: document.getElementById('channelTitle'),
-  viewerCount: document.getElementById('viewerCount'),
-  followerCount: document.getElementById('followerCount'),
-  verifiedIcon: document.getElementById('verifiedIcon'),
-  chatIframe: document.getElementById('chatIframe'),
-  chatStatus: document.getElementById('chatStatus'),
-  chatInput: document.getElementById('chatInput'),
-  sendBtn: document.getElementById('sendBtn'),
-  loginHint: document.getElementById('loginHint'),
-  authStatus: document.getElementById('authStatus'),
-  toast: document.getElementById('toast'),
-  toastTitle: document.getElementById('toastTitle'),
-  toastMessage: document.getElementById('toastMessage')
-};
+  const NUM = new Intl.NumberFormat('tr-TR');
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const POLL_MS = 30000;
 
-document.addEventListener('DOMContentLoaded', () => {
-  initTabs();
-  checkAuthStatus();
-  fetchChannelStatus();
-  setInterval(fetchChannelStatus, 30000);
-});
+  const el = {
+    body: document.body,
+    statusChip: $('#statusChip'),
+    statusText: $('#statusText'),
+    tallyLabel: $('#tallyLabel'),
+    clock: $('#clockNow'),
+    year: $('#year'),
 
-function initTabs() {
-  const tabs = document.querySelectorAll('.tab');
-  const panels = document.querySelectorAll('.panel');
-  
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.setAttribute('aria-selected', 'false'));
-      panels.forEach(p => p.classList.remove('active'));
-      tab.setAttribute('aria-selected', 'true');
-      document.getElementById(tab.dataset.target).classList.add('active');
+    loginBtn: $('#loginBtn'),
+    logoutBtn: $('#logoutBtn'),
+
+    player: $('#playerFrame'),
+    slateCheck: $('#slateCheck'),
+    channelAvatar: $('#channelAvatar'),
+    sessionTitle: $('#sessionTitle'),
+    viewerCount: $('#viewerCount'),
+    monitorViewers: $('#monitorViewers'),
+    followerCount: $('#followerCount'),
+    verified: $('#verifiedIcon'),
+
+    refreshBtn: $('#refreshBtn'),
+    refreshIcon: $('#refreshIcon'),
+    shareBtn: $('#shareBtn'),
+    netWarn: $('#netWarn'),
+
+    chatFrame: $('#chatFrame'),
+    chatState: $('#chatState'),
+    composer: $('#composer'),
+    chatInput: $('#chatInput'),
+    sendBtn: $('#sendBtn'),
+    charCount: $('#charCount'),
+    loginHint: $('#loginHint'),
+
+    apiStatus: $('#apiStatus'),
+    apiDot: $('#apiDot'),
+    authStatus: $('#authStatus'),
+    authDot: $('#authDot'),
+    lastCheck: $('#lastCheck'),
+
+    toasts: $('#toasts')
+  };
+
+  const state = {
+    live: false,
+    loggedIn: false,
+    broadcasterId: null,
+    viewers: 0,
+    followers: null,
+    lastCheck: null,
+    playerLoaded: false,
+    refreshing: false
+  };
+
+  /* sekmeler */
+  const TABS = ['live', 'archive', 'clips', 'about'];
+  const HASHES = { live: '#canli', archive: '#arsiv', clips: '#klipler', about: '#hakkinda' };
+  const tabButtons = $$('.tab');
+
+  function activateTab(name, { focus = false, updateHash = true } = {}) {
+    if (!TABS.includes(name)) name = 'live';
+
+    tabButtons.forEach((btn) => {
+      const isActive = btn.dataset.tab === name;
+      btn.setAttribute('aria-selected', String(isActive));
+      btn.tabIndex = isActive ? 0 : -1;
+      if (isActive && focus) btn.focus();
+    });
+
+    TABS.forEach((key) => {
+      const panel = $('#panel-' + key);
+      if (panel) panel.classList.toggle('is-active', key === name);
+    });
+
+    if (updateHash && window.location.hash !== HASHES[name]) {
+      history.replaceState(null, '', HASHES[name]);
+    }
+  }
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+    btn.addEventListener('keydown', (event) => {
+      const current = TABS.indexOf(btn.dataset.tab);
+      let next = null;
+
+      if (event.key === 'ArrowRight') next = (current + 1) % TABS.length;
+      else if (event.key === 'ArrowLeft') next = (current - 1 + TABS.length) % TABS.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = TABS.length - 1;
+
+      if (next !== null) {
+        event.preventDefault();
+        activateTab(TABS[next], { focus: true });
+      }
     });
   });
-}
 
-async function checkAuthStatus() {
-  try {
-    const res = await fetch('/api/me');
-    const data = await res.json();
-    
-    isLoggedIn = data.loggedIn;
-    
-    if (isLoggedIn) {
-      el.loginBtn.style.display = 'none';
-      el.logoutBtn.style.display = 'inline-flex';
-      el.chatStatus.textContent = 'Bağlı';
-      el.chatStatus.classList.add('logged-in');
-      el.chatInput.disabled = false;
-      el.sendBtn.disabled = false;
-      el.loginHint.classList.remove('active');
-      
-      el.authStatus.textContent = 'Aktif (Giriş Yapıldı)';
-      el.authStatus.style.color = 'var(--md-success)';
-    } else {
-      el.loginBtn.style.display = 'inline-flex';
-      el.logoutBtn.style.display = 'none';
-      el.chatStatus.textContent = 'Giriş Yapılmadı';
-      el.chatStatus.classList.remove('logged-in');
-      el.chatInput.disabled = true;
-      el.sendBtn.disabled = true;
-      el.loginHint.classList.add('active');
-      
-      el.authStatus.textContent = 'Yok (Misafir)';
-      el.authStatus.style.color = 'var(--md-on-surface-variant)';
+  function tabFromHash() {
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    const found = Object.keys(HASHES).find((key) => HASHES[key] === '#' + hash);
+    return found || 'live';
+  }
+
+  window.addEventListener('hashchange', () => activateTab(tabFromHash(), { updateHash: false }));
+
+  /* saat ve "son kontrol" */
+  function paintClock() {
+    const now = new Date();
+    const time = new Intl.DateTimeFormat('tr-TR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Istanbul'
+    }).format(now);
+    el.clock.textContent = time;
+    el.clock.dateTime = now.toISOString();
+  }
+
+  function relative(ms) {
+    const secs = Math.max(0, Math.round((Date.now() - ms) / 1000));
+    if (secs < 5) return 'az önce';
+    if (secs < 60) return secs + ' sn önce';
+    const mins = Math.round(secs / 60);
+    if (mins < 60) return mins + ' dk önce';
+    return Math.round(mins / 60) + ' sa önce';
+  }
+
+  function paintLastCheck() {
+    if (!state.lastCheck) {
+      el.lastCheck.textContent = 'son kontrol · —';
+      el.slateCheck.textContent = '—';
+      return;
     }
-  } catch (err) {
-    console.error('Auth hatası:', err);
-    el.authStatus.textContent = 'Hata';
-    el.authStatus.style.color = 'var(--md-error)';
+    const rel = relative(state.lastCheck);
+    el.lastCheck.textContent = 'son kontrol · ' + rel;
+    el.slateCheck.textContent = rel;
   }
-}
 
-async function handleLogout() {
-  try {
-    await fetch('/api/logout', { method: 'POST' });
-    window.location.reload();
-  } catch (err) {
-    showToast('Hata', 'Çıkış yapılamadı.', true);
+  /* ilk yüklemede sayılar bir kere yukarı sayıyor */
+  function countUp(node, target) {
+    if (REDUCED || target === null || !Number.isFinite(target)) {
+      node.textContent = target === null ? '—' : NUM.format(target);
+      return;
+    }
+    const from = 0;
+    const start = performance.now();
+    const dur = 620;
+
+    function frame(now) {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      node.textContent = NUM.format(Math.round(from + (target - from) * eased));
+      if (p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
   }
-}
 
-async function fetchChannelStatus() {
-  try {
-    const res = await fetch('/api/stats');
-    if (!res.ok) throw new Error('Sunucu yanıt vermedi');
-    
-    const data = await res.json();
-    
-    if (data.broadcasterId) broadcasterId = data.broadcasterId;
-    
+  /* yayın durumu */
+  function setLive(isLive) {
+    state.live = Boolean(isLive);
+    el.body.dataset.live = state.live ? 'true' : 'false';
+    el.statusChip.dataset.live = state.live ? 'true' : 'false';
+    el.statusText.textContent = state.live ? 'canlı' : 'kapalı';
+    el.tallyLabel.textContent = state.live ? 'canlı' : 'kapalı';
+    el.viewerCount.classList.toggle('is-muted', !state.live);
+
+    if (state.live && !state.playerLoaded) {
+      // Oynatıcıyı ancak yayın gerçekten açıkken yükle.
+      el.player.src = el.player.dataset.src;
+      state.playerLoaded = true;
+    } else if (!state.live && state.playerLoaded) {
+      // Yayın kapandı: ses arkada çalmaya devam etmesin diye dokümanı boşalt.
+      el.player.src = 'about:blank';
+      state.playerLoaded = false;
+    }
+  }
+
+  function setNetworkError(hasError) {
+    el.netWarn.hidden = !hasError;
+    el.apiDot.dataset.ok = String(!hasError);
+    el.apiStatus.textContent = hasError ? 'API yanıt vermiyor' : 'API sağlıklı';
+  }
+
+  function renderStats(data) {
+    state.lastCheck = Date.now();
+
+    const live = data.isLive === true;
+    setLive(live);
+
+    const viewers = Number(data.viewerCount) || 0;
+    state.viewers = viewers;
+    el.viewerCount.textContent = live ? NUM.format(viewers) : '0';
+    el.monitorViewers.textContent = live ? NUM.format(viewers) : '—';
+
+    // API bu alanı bazen 27, bazen "27" olarak döndürüyor. (Evet, ikisini de gördüm.)
+    const raw = data.followersCount;
+    const followers = raw == null || raw === '' ? NaN : Number(raw);
+    if (Number.isFinite(followers)) {
+      if (state.followers === null) countUp(el.followerCount, followers);
+      else el.followerCount.textContent = NUM.format(followers);
+      state.followers = followers;
+    }
+
+    if (data.broadcasterId) state.broadcasterId = data.broadcasterId;
+
     if (data.profilePic) {
-      el.channelAvatar.innerHTML = `<img src="${data.profilePic}" alt="Mor Tilki" onerror="this.parentNode.textContent='MT'">`;
+      const pic = String(data.profilePic);
+      if (!el.channelAvatar.querySelector('img')) {
+        const img = document.createElement('img');
+        img.src = pic;
+        img.alt = '';
+        img.loading = 'lazy';
+        img.addEventListener('error', () => img.remove());
+        el.channelAvatar.textContent = '';
+        el.channelAvatar.appendChild(img);
+      }
     }
-    
-    if (data.verified) el.verifiedIcon.style.display = 'inline-block';
-    
-    if (data.followersCount !== undefined) {
-      el.followerCount.textContent = data.followersCount.toLocaleString('tr-TR');
-    }
-    
-    if (data.isLive) {
-      el.statusChip.dataset.state = 'live';
-      el.statusText.textContent = 'Canlı';
-      el.kickPlayer.style.display = 'block';
-      el.offlineScreen.classList.remove('active');
-      el.channelTitle.textContent = data.sessionTitle || 'Canlı Yayın';
-      el.viewerCount.textContent = (data.viewerCount || 0).toLocaleString('tr-TR');
+
+    el.verified.toggleAttribute('hidden', data.verified !== true);
+
+    if (live) {
+      el.sessionTitle.textContent = data.sessionTitle || 'başlıksız yayın';
     } else {
-      el.statusChip.dataset.state = 'offline';
-      el.statusText.textContent = 'Çevrimdışı';
-      el.kickPlayer.style.display = 'none';
-      el.offlineScreen.classList.add('active');
-      el.channelTitle.textContent = 'Şu an yayında değil';
-      el.viewerCount.textContent = '0';
+      el.sessionTitle.textContent = 'şu an yayında değil';
     }
-  } catch (err) {
-    console.warn('Durum çekilemedi:', err);
-    el.statusText.textContent = 'Durum Alınamadı';
-    el.kickPlayer.style.display = 'block';
-    el.offlineScreen.classList.remove('active');
-    el.channelTitle.textContent = 'Bağlantı hatası...';
-  }
-}
 
-el.sendBtn.addEventListener('click', sendMessage);
-el.chatInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendMessage();
-});
-
-async function sendMessage() {
-  const content = el.chatInput.value.trim();
-  if (!content) return;
-  
-  if (!broadcasterId) {
-    showToast('Hata', 'Kanal bilgisi henüz yüklenmedi.', true);
-    return;
+    setNetworkError(false);
+    paintLastCheck();
   }
-  
-  el.sendBtn.disabled = true;
-  el.sendBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_empty</span>';
-  
-  try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: content, broadcaster_id: broadcasterId })
-    });
-    
-    if (res.ok) {
-      el.chatInput.value = '';
-    } else if (res.status === 401) {
-      showToast('Oturum Bitti', 'Lütfen tekrar giriş yapın.', true);
-      el.loginBtn.style.display = 'inline-flex';
-      el.logoutBtn.style.display = 'none';
-      el.chatInput.disabled = true;
+
+  async function fetchStats({ silent = false } = {}) {
+    if (state.refreshing) return;
+    state.refreshing = true;
+    if (!silent) el.refreshIcon.classList.add('spin');
+
+    try {
+      const res = await fetch('/api/stats', {
+        headers: { accept: 'application/json' },
+        cache: 'no-store'
+      });
+      if (!res.ok) throw new Error('stats ' + res.status);
+      renderStats(await res.json());
+    } catch (err) {
+      console.warn('[KickForge] durum çekilemedi:', err);
+      setNetworkError(true);
+
+      if (!state.lastCheck) {
+        // Hiç veri alamadık, ekranda "canlı" yazmasın.
+        setLive(false);
+        el.statusText.textContent = 'bilinmiyor';
+        el.tallyLabel.textContent = 'bilinmiyor';
+        el.sessionTitle.textContent = 'durum alınamadı';
+        el.monitorViewers.textContent = '—';
+      }
+      // Veri daha önce geldiyse son bilinen durumu bozmuyoruz; üstteki
+      // uyarı şeridi zaten "bu bilgi bayat olabilir" diyor.
+      return false;
+    } finally {
+      state.refreshing = false;
+      el.refreshIcon.classList.remove('spin');
+    }
+    return true;
+  }
+
+  /* giriş / çıkış */
+  function renderAuth(loggedIn) {
+    state.loggedIn = loggedIn;
+
+    el.loginBtn.hidden = loggedIn;
+    el.logoutBtn.hidden = !loggedIn;
+
+    el.chatInput.disabled = !loggedIn;
+    el.sendBtn.disabled = !loggedIn;
+    el.loginHint.classList.toggle('is-on', !loggedIn);
+    el.chatState.dataset.on = String(loggedIn);
+    el.chatState.textContent = loggedIn ? 'bağlı' : 'misafir';
+
+    el.authDot.dataset.ok = String(loggedIn);
+    el.authStatus.textContent = loggedIn ? 'aktif (kick hesabı bağlı)' : 'yok (misafir)';
+  }
+
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/me', { headers: { accept: 'application/json' }, cache: 'no-store' });
+      if (!res.ok) throw new Error('me ' + res.status);
+      const data = await res.json();
+      renderAuth(data.loggedIn === true);
+    } catch (err) {
+      console.warn('[KickForge] oturum kontrolü başarısız:', err);
+      renderAuth(false);
+      el.authStatus.textContent = 'kontrol edilemedi';
+    }
+  }
+
+  async function handleLogout() {
+    el.logoutBtn.disabled = true;
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+      toast('Çıkış yapıldı', 'Sohbet artık salt okunur modda.');
+      await checkAuth();
+    } catch (err) {
+      toast('Çıkış yapılamadı', 'Bağlantıyı kontrol edip tekrar dene.', 'error');
+    } finally {
+      el.logoutBtn.disabled = false;
+    }
+  }
+
+  /* mesaj gönderme */
+  function paintCount() {
+    const len = el.chatInput.value.length;
+    el.charCount.textContent = len + '/500';
+    el.charCount.classList.toggle('is-near', len > 400 && len <= 500);
+    el.charCount.classList.toggle('is-over', len > 500);
+  }
+
+  async function sendMessage() {
+    const content = el.chatInput.value.trim();
+    if (!content) {
+      el.chatInput.focus();
+      return;
+    }
+
+    if (!state.broadcasterId) {
+      toast('Kanal bilgisi yok', 'Sayfa kanal verisini henüz almadı, bir saniye sonra tekrar dene.', 'error');
+      return;
+    }
+
+    el.sendBtn.disabled = true;
+    el.sendBtn.classList.add('is-busy');
+    el.sendBtn.innerHTML = '<svg class="ico spin" aria-hidden="true"><use href="#i-refresh" /></svg>';
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content, broadcaster_id: state.broadcasterId })
+      });
+
+      if (res.ok) {
+        el.chatInput.value = '';
+        paintCount();
+        el.chatInput.classList.add('is-sent');
+        setTimeout(() => el.chatInput.classList.remove('is-sent'), 900);
+      } else if (res.status === 401) {
+        renderAuth(false);
+        toast('Oturum bitti', 'Yeniden giriş yapman gerekiyor.', 'error');
+      } else {
+        const detail = (await res.text()).slice(0, 180);
+        toast('Mesaj gitmedi', detail || 'Kick isteği reddetti.', 'error');
+      }
+    } catch (err) {
+      toast('Bağlantı hatası', 'Sunucuya ulaşamadım.', 'error');
+    } finally {
+      el.sendBtn.disabled = !state.loggedIn;
+      el.sendBtn.classList.remove('is-busy');
+      el.sendBtn.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-send" /></svg>';
+      if (state.loggedIn) el.chatInput.focus();
+    }
+  }
+
+  /* bildirimler */
+  function toast(title, message, kind = 'ok') {
+    const node = document.createElement('div');
+    node.className = 'toast';
+    node.dataset.kind = kind;
+    node.innerHTML =
+      '<span class="toast__icon">' +
+        (kind === 'error'
+          ? '<svg class="ico ico--sm" aria-hidden="true"><use href="#i-alert" /></svg>'
+          : '<svg class="ico ico--sm" aria-hidden="true"><use href="#i-check-badge" /></svg>') +
+      '</span>' +
+      '<div><div class="toast__title"></div><div class="toast__msg"></div></div>' +
+      '<button class="toast__close" type="button" aria-label="Kapat">' +
+        '<svg class="ico" style="width:13px;height:13px" aria-hidden="true"><use href="#i-x" /></svg>' +
+      '</button>';
+
+    node.querySelector('.toast__title').textContent = title;
+    node.querySelector('.toast__msg').textContent = message;
+
+    const remove = () => {
+      node.classList.add('is-out');
+      node.addEventListener('animationend', () => node.remove(), { once: true });
+    };
+
+    node.querySelector('.toast__close').addEventListener('click', remove);
+    el.toasts.appendChild(node);
+
+    while (el.toasts.children.length > 3) el.toasts.firstElementChild.remove();
+    setTimeout(remove, 5600);
+  }
+
+  /* panoya kopyala */
+  async function shareChannel() {
+    const url = 'https://kick.com/mor-tilki';
+    try {
+      await navigator.clipboard.writeText(url);
+      toast('Kopyalandı', url);
+    } catch (err) {
+      toast('Kopyalanamadı', 'Tarayıcı panoya erişim vermedi. Adres: ' + url, 'error');
+    }
+  }
+
+  /* olaylar */
+  el.refreshBtn.addEventListener('click', async () => {
+    // fetchStats hata durumunda da dönüyor, o yüzden gerçekten çekildi mi bakıyorum.
+    const ok = await fetchStats();
+    if (ok) toast('Güncellendi', 'Kanal durumu yeniden çekildi.');
+  });
+
+  el.shareBtn.addEventListener('click', shareChannel);
+  el.logoutBtn.addEventListener('click', handleLogout);
+
+  $$('[data-retry]').forEach((btn) => {
+    btn.addEventListener('click', () => fetchStats());
+  });
+
+  el.composer.addEventListener('submit', (event) => {
+    event.preventDefault();
+    sendMessage();
+  });
+
+  el.chatInput.addEventListener('input', paintCount);
+  el.chatInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') el.chatInput.blur();
+  });
+
+  /* klavye */
+  document.addEventListener('keydown', (event) => {
+    const tag = (event.target.tagName || '').toLowerCase();
+    const typing = tag === 'input' || tag === 'textarea' || event.target.isContentEditable;
+    if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
+
+    if (event.key === '/') {
+      event.preventDefault();
+      if (!el.chatInput.disabled) el.chatInput.focus();
+      else el.chatInput.closest('.chat').scrollIntoView({ block: 'center', behavior: REDUCED ? 'auto' : 'smooth' });
+      return;
+    }
+
+    if (event.key === 'r') {
+      event.preventDefault();
+      fetchStats();
+      return;
+    }
+
+    const index = ['1', '2', '3', '4'].indexOf(event.key);
+    if (index !== -1) {
+      event.preventDefault();
+      activateTab(TABS[index]);
+    }
+  });
+
+  /* sekme gizleniyorsa sorgu da duruyor */
+  let pollTimer = null;
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(() => fetchStats({ silent: true }), POLL_MS);
+  }
+  function stopPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopPolling();
     } else {
-      const errText = await res.text();
-      showToast('Gönderilemedi', errText, true);
+      fetchStats({ silent: true });
+      startPolling();
     }
-  } catch (err) {
-    showToast('Bağlantı Hatası', 'Sunucuya ulaşılamadı.', true);
-  } finally {
-    el.sendBtn.disabled = false;
-    el.sendBtn.innerHTML = '<span class="material-symbols-outlined">send</span>';
-    el.chatInput.focus();
-  }
-}
+  });
 
-let toastTimeout;
-function showToast(title, message, isError = false) {
-  el.toastTitle.textContent = title;
-  el.toastMessage.textContent = message;
-  if (isError) el.toast.classList.add('error');
-  else el.toast.classList.remove('error');
-  
-  el.toast.classList.add('show');
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => el.toast.classList.remove('show'), 4000);
-}
+  /* açılış */
+  function boot() {
+    activateTab(tabFromHash(), { updateHash: false });
+
+    el.year.textContent = String(new Date().getFullYear());
+    paintClock();
+    paintCount();
+    paintLastCheck();
+
+    setInterval(paintClock, 15000);
+    setInterval(paintLastCheck, 5000);
+
+    checkAuth();
+    fetchStats();
+    startPolling();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
 </script>
 
 </body>
