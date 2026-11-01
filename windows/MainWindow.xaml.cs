@@ -29,6 +29,7 @@ namespace KickForgeDesktop
         private readonly AboutPage _aboutPage;
 
         private TrayService? _tray;
+        private bool _pagesReady;
         private bool _refreshing;
         private bool _quitting;
         private bool _soundMuted;
@@ -72,6 +73,7 @@ namespace KickForgeDesktop
             _settingsPage = new SettingsPage(this);
             _aboutPage = new AboutPage(this);
             PageHost.Content = _livePage;
+            _pagesReady = true;
 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             VersionText.Text = "sürüm " + (version == null ? "2.0" : version.ToString(2)) + " · native";
@@ -544,12 +546,15 @@ namespace KickForgeDesktop
 
         private void Nav_Checked(object sender, RoutedEventArgs e)
         {
-            if (PageHost == null) return;
+            if (PageHost == null || !_pagesReady) return;
             if (NavLive.IsChecked == true) PageHost.Content = _livePage;
             else if (NavStudio.IsChecked == true) PageHost.Content = _studioPage;
             else if (NavHistory.IsChecked == true) PageHost.Content = _historyPage;
             else if (NavSettings.IsChecked == true) PageHost.Content = _settingsPage;
             else if (NavAbout.IsChecked == true) PageHost.Content = _aboutPage;
+
+            // sohbet döngüsü yalnızca bu sayfa açıkken çalışsın
+            _studioPage.SetActive(NavStudio.IsChecked == true);
         }
 
         // ---------------------------------------------------------------- dışa açılan

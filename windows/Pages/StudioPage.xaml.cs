@@ -22,9 +22,16 @@ namespace KickForgeDesktop.Pages
         private readonly HashSet<string> _seen = new HashSet<string>();
         private ChannelIds? _ids;
         private bool _polling;
+        private bool _active;
+        private bool _chatLogged;
+        private int _chatFails;
         private bool _sending;
         private bool _muted = true;
+        private static CoreWebView2Environment? _environment;
         private bool _playerReady;
+        private bool _playerStarting;
+        private bool _playerFailed;
+        private bool _wasLive;
         private bool _chatVisible = true;
         private string _slug = "";
 
@@ -54,24 +61,45 @@ namespace KickForgeDesktop.Pages
         {
             _slug = _shell.Settings.ChannelSlug;
             await StartPlayerAsync();
-            _chatTimer.Start();
-            PollChat();
+            if (_active) PollChat();
+        }
+
+        /// <summary>menü bu sayfaya geçtiğinde çağrılır.</summary>
+        public void SetActive(bool active)
+        {
+            _active = active;
+            if (active)
+            {
+                _slug = _shell.Settings.ChannelSlug;
+                _chatTimer.Start();
+                PollChat();
+            }
+            else
+            {
+                _chatTimer.Stop();
+            }
         }
 
         private async System.Threading.Tasks.Task StartPlayerAsync()
         {
-            if (_playerReady) return;
-            PlayerHint.Visibility = Visibility.Visible;
-            PlayerHint.Text = "oynatıcı hazırlanıyor…";
+            // aynı anda iki kez çağrılırsa webview "farklı ortam" hatası veriyor
+            if (_playerReady || _playerStarting) return;
+            _playerStarting = true;
+            Overlay.Visibility = Visibility.Visible;
+            OverlayTitle.Text = "oynatıcı hazırlanıyor…";
+            OverlayText.Text = "ilk açılışta birkaç saniye sürebilir";
 
             try
             {
                 var folder = Path.Combine(SettingsStore.Folder, "webview");
                 Directory.CreateDirectory(folder);
 
-                var options = new CoreWebView2EnvironmentOptions("--autoplay-policy=no-user-gesture-required");
-                var environment = await CoreWebView2Environment.CreateAsync(null, folder, options);
-                await Player.EnsureCoreWebView2Async(environment);
+                if (_environment == null)
+                {
+                    var options = new CoreWebView2EnvironmentOptions("--autoplay-policy=no-user-gesture-required");
+                    _environment = await CoreWebView2Environment.CreateAsync(null, folder, options);
+                }
+                await Player.EnsureCoreWebView2Async(_environment);
 
                 Player.CoreWebView2.Settings.AreDevToolsEnabled = false;
                 Player.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
@@ -79,13 +107,20 @@ namespace KickForgeDesktop.Pages
                 Player.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
                 Player.CoreWebView2.NavigationCompleted += (_, args) =>
                 {
-                    if (args.IsSuccess)
+                    if (!args.IsSuccess)
                     {
-                        PlayerHint.Visibility = Visibility.Collapsed;
+                        ShowPlayerError("sayfa açılamadı (" + args.WebErrorStatus + ")");
+                        return;
+                    }
+
+                    _playerFailed = false;
+                    if (_wasLive)
+                    {
+                        Overlay.Visibility = Visibility.Collapsed;
                     }
                     else
                     {
-                        PlayerHint.Text = "oynatıcı sayfası açılamadı (" + args.WebErrorStatus + ")";
+                        ShowOffline();
                     }
                 };
 
@@ -94,16 +129,43 @@ namespace KickForgeDesktop.Pages
             }
             catch (Exception ex)
             {
-                PlayerHint.Text = "oynatıcı başlatılamadı.\nWindows'ta Edge WebView2 çalışma zamanı gerekiyor.\n"
-                                  + ex.Message;
-                PlayerHint.Visibility = Visibility.Visible;
+                ShowPlayerError("Edge WebView2 çalışma zamanı kurulu değil ya da başlatılamadı: " + ex.Message);
                 Log.Write("webview başlatılamadı: " + ex.Message);
             }
+            finally
+            {
+                _playerStarting = false;
+            }
+        }
+
+        private void ShowOffline()
+        {
+            Overlay.Visibility = Visibility.Visible;
+            OverlayTitle.Text = "yayın kapalı";
+            OverlayText.Text = "mor tilki şu an yayında değil. yayın açılınca oynatıcı kendiliğinden başlıyor, " +
+                               "bu ekranı açık bırakabilirsin.";
+        }
+
+        private void ShowPlayerError(string detail)
+        {
+            _playerFailed = true;
+            Overlay.Visibility = Visibility.Visible;
+            OverlayTitle.Text = "oynatıcı açılamadı";
+            OverlayText.Text = detail;
+        }
+
+        private void OverlayOpen_Click(object sender, RoutedEventArgs e) => _shell.OpenChannel();
+
+        private void OverlayRetry_Click(object sender, RoutedEventArgs e)
+        {
+            _playerFailed = false;
+            ReloadPlayer();
         }
 
         private void NavigatePlayer()
         {
             if (!_playerReady) return;
+            Overlay.Visibility = _wasLive ? Visibility.Collapsed : Visibility.Visible;
             var url = "https://player.kick.com/" + Uri.EscapeDataString(_slug) +
                       "?muted=" + (_muted ? "true" : "false") + "&autoplay=true";
             Player.Source = new Uri(url);
@@ -146,8 +208,7 @@ namespace KickForgeDesktop.Pages
 
         private async void PollChat()
         {
-            if (_polling) return;
-            if (!IsVisible || !_chatVisible) return;
+            if (_polling || !_active || !_chatVisible) return;
 
             _polling = true;
             try
@@ -167,10 +228,17 @@ namespace KickForgeDesktop.Pages
                 ChatState.Text = _ids.ChannelId == 0
                     ? "kanal bulunamadı"
                     : "bağlı · " + _seen.Count + " mesaj" + (added > 0 ? " · +" + added : "");
+
+                if (!_chatLogged)
+                {
+                    _chatLogged = true;
+                    Log.Write("sohbet yanıtı · " + messages.Count + " mesaj · kanal " + _ids.ChannelId);
+                }
             }
             catch (Exception ex)
             {
                 ChatState.Text = "sohbet alınamadı · " + Trim(ex.Message);
+                if (_chatFails++ % 20 == 0) Log.Write("sohbet hatası: " + ex.Message);
             }
             finally
             {
@@ -293,7 +361,23 @@ namespace KickForgeDesktop.Pages
                 LiveText.Text = "YAYIN KAPALI";
                 ViewerText.Text = "";
                 TitleText.Text = "kanal verisi bekleniyor…";
+                if (_playerReady && !_playerFailed) ShowOffline();
                 return;
+            }
+
+            var wasLive = _wasLive;
+            _wasLive = stats.IsLive;
+
+            if (stats.IsLive && !wasLive)
+            {
+                // yayın yeni açıldı: oynatıcıyı tazelemek gerekiyor, yoksa
+                // kapalı ekranında kalıyor
+                if (_playerReady) NavigatePlayer();
+                else _ = StartPlayerAsync();
+            }
+            else if (!stats.IsLive && wasLive)
+            {
+                if (_playerReady) ShowOffline();
             }
 
             var accent = ThemeManager.Get("Accent");
@@ -304,7 +388,8 @@ namespace KickForgeDesktop.Pages
             ViewerText.Text = stats.IsLive ? stats.ViewerCount.ToString("N0") + " izleyici" : "";
             TitleText.Text = stats.SessionTitle;
 
-            if (stats.IsLive && !_playerReady) _ = StartPlayerAsync();
+            if (stats.IsLive && _playerReady && !_playerFailed) Overlay.Visibility = Visibility.Collapsed;
+            if (!stats.IsLive && !_playerReady) _ = StartPlayerAsync();
         }
 
         public void Dispose()

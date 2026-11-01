@@ -61,6 +61,45 @@ namespace KickForgeDesktop
             var window = new MainWindow();
             MainWindow = window;
             window.Show();
+
+            if (e.Args.Contains("--studio")) window.ShowStudio();
+
+            // arayüzü içeriden PNG'ye çiz (kickforge.exe --shot)
+            if (e.Args.Contains("--shot"))
+            {
+                window.Dispatcher.InvokeAsync(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(9000);
+                    SaveShot(window);
+                    window.Close();
+                    Shutdown();
+                }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            }
+        }
+
+        private static void SaveShot(MainWindow window)
+        {
+            try
+            {
+                var root = window.Content as FrameworkElement;
+                if (root == null) return;
+                var width = (int)Math.Max(1, root.ActualWidth);
+                var height = (int)Math.Max(1, root.ActualHeight);
+
+                var target = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                    width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                target.Render(root);
+
+                var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(target));
+                var path = System.IO.Path.Combine(SettingsStore.Folder, "arayuz.png");
+                using (var stream = System.IO.File.Create(path)) encoder.Save(stream);
+                Log.Write("tanılama: arayüz görüntüsü " + path);
+            }
+            catch (Exception ex)
+            {
+                Log.Write("tanılama: görüntü alınamadı · " + ex.Message);
+            }
         }
 
         private async void RunDiagnostics(string[] args)

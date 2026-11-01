@@ -49,9 +49,20 @@
             <Border Background="#000000" CornerRadius="12" ClipToBounds="True">
                 <Grid>
                     <wv2:WebView2 x:Name="Player" DefaultBackgroundColor="#0B0A10" />
-                    <TextBlock x:Name="PlayerHint" Text="oynatıcı hazırlanıyor…" Style="{StaticResource Caption}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
-                               TextAlignment="Center" MaxWidth="420" />
+
+                    <Border x:Name="Overlay" Background="{DynamicResource Bg}">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420" Margin="24">
+                            <TextBlock x:Name="OverlayTitle" Text="oynatıcı hazırlanıyor…" Style="{StaticResource H1}"
+                                       TextAlignment="Center" />
+                            <TextBlock x:Name="OverlayText" Text="" Style="{StaticResource Body}" TextAlignment="Center"
+                                       Foreground="{DynamicResource TextDim}" Margin="0,8,0,0" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
+                                <Button Content="kick'te aç" Style="{StaticResource Primary}" Click="OverlayOpen_Click" />
+                                <Button Content="yeniden dene" Style="{StaticResource Ghost}" Margin="8,0,0,0"
+                                        Click="OverlayRetry_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
 
@@ -84,11 +95,11 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock TextWrapping="Wrap" FontSize="12.5">
-                                    <Run Text="{Binding Clock}" Foreground="{DynamicResource TextDim}" FontFamily="Cascadia Mono, Consolas" FontSize="9.5" />
+                                    <Run Text="{Binding Clock, Mode=OneWay}" Foreground="{DynamicResource TextDim}" FontFamily="Cascadia Mono, Consolas" FontSize="9.5" />
                                     <Run Text="  " />
-                                    <Run Text="{Binding User}" Foreground="{Binding UserBrush}" FontWeight="SemiBold" />
+                                    <Run Text="{Binding User, Mode=OneWay}" Foreground="{Binding UserBrush, Mode=OneWay}" FontWeight="SemiBold" />
                                     <Run Text="  " />
-                                    <Run Text="{Binding Content}" Foreground="{DynamicResource Text}" />
+                                    <Run Text="{Binding Content, Mode=OneWay}" Foreground="{DynamicResource Text}" />
                                 </TextBlock>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
