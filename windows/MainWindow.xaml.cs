@@ -4,8 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -18,6 +20,44 @@ namespace KickForgeDesktop
 {
     public partial class MainWindow : Window
     {
+        // ------------------------------------------------------------ taşmayı önleme
+        // kenarlıksız pencere (WindowChrome) büyütülünce windows pencereyi çerçeve
+        // payı kadar dışarı taşırıyor: sağ/alt kenar ve alt bilgi ekran dışında
+        // kalıyordu. büyütme sınırlarını monitörün çalışma alanına sabitliyoruz.
+        private const int WmGetMinMaxInfo = 0x0024;
+        private const int MonitorDefaultToNearest = 0x00000002;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct Point32 { public int X; public int Y; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MinMaxInfo
+        {
+            public Point32 Reserved;
+            public Point32 MaxSize;
+            public Point32 MaxPosition;
+            public Point32 MinTrackSize;
+            public Point32 MaxTrackSize;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct Rect32 { public int Left; public int Top; public int Right; public int Bottom; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MonitorInfo
+        {
+            public int Size;
+            public Rect32 Monitor;
+            public Rect32 Work;
+            public uint Flags;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, int flags);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+
         private readonly KickClient _client = new KickClient();
         private readonly HotkeyManager _hotkeys = new HotkeyManager();
         private readonly DispatcherTimer _timer;
@@ -32,6 +72,8 @@ namespace KickForgeDesktop
         private bool _pagesReady;
         private bool _refreshing;
         private bool _quitting;
+        private bool _fullScreen;
+        private WindowState _stateBeforeFullScreen = WindowState.Normal;
         private bool _soundMuted;
         private int _sampleCounter;
         private int _failures;
@@ -81,7 +123,15 @@ namespace KickForgeDesktop
             _timer = new DispatcherTimer();
             _timer.Tick += async (_, _) => await RefreshAsync(false);
 
-            SourceInitialized += (_, _) => _hotkeys.Attach(this);
+            SourceInitialized += (_, _) =>
+            {
+                _hotkeys.Attach(this);
+
+                if (PresentationSource.FromVisual(this) is HwndSource source)
+                {
+                    source.AddHook(WindowProc);
+                }
+            };
             Loaded += OnLoaded;
             Closing += OnClosing;
             StateChanged += OnStateChanged;
@@ -101,10 +151,65 @@ namespace KickForgeDesktop
                     e.Handled = true;
                     break;
                 case System.Windows.Input.Key.F11:
-                    WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+                    ToggleFullScreen();
                     e.Handled = true;
                     break;
+                case System.Windows.Input.Key.Escape:
+                    if (_fullScreen)
+                    {
+                        ToggleFullScreen();
+                        e.Handled = true;
+                    }
+                    break;
             }
+        }
+
+        /// <summary>f11: görev çubuğu dahil tüm ekranı kaplar; esc geri döndürür.</summary>
+        public void ToggleFullScreen()
+        {
+            if (!_fullScreen)
+            {
+                _stateBeforeFullScreen = WindowState;
+                _fullScreen = true;
+
+                // sınırlar _fullScreen'e göre yeniden hesaplansın
+                if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal;
+                WindowState = WindowState.Maximized;
+                Log.Write("tam ekran açıldı");
+            }
+            else
+            {
+                _fullScreen = false;
+                WindowState = WindowState.Normal;
+                if (_stateBeforeFullScreen == WindowState.Maximized) WindowState = WindowState.Maximized;
+                Log.Write("tam ekran kapandı");
+            }
+        }
+
+        private IntPtr WindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg != WmGetMinMaxInfo) return IntPtr.Zero;
+
+            var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
+            if (monitor == IntPtr.Zero) return IntPtr.Zero;
+
+            var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+            if (!GetMonitorInfo(monitor, ref info)) return IntPtr.Zero;
+
+            // tam ekranda monitörün tamamı, normal büyütmede görev çubuğu hariç
+            var area = _fullScreen ? info.Monitor : info.Work;
+            var mmi = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+
+            mmi.MaxPosition.X = area.Left;
+            mmi.MaxPosition.Y = area.Top;
+            mmi.MaxSize.X = area.Right - area.Left;
+            mmi.MaxSize.Y = area.Bottom - area.Top;
+            mmi.MaxTrackSize.X = info.Monitor.Right - info.Monitor.Left;
+            mmi.MaxTrackSize.Y = info.Monitor.Bottom - info.Monitor.Top;
+
+            Marshal.StructureToPtr(mmi, lParam, true);
+            handled = true;
+            return IntPtr.Zero;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)

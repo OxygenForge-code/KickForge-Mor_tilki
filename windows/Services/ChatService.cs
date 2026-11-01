@@ -144,9 +144,110 @@ namespace KickForgeDesktop.Services
                         // renk bozuksa varsayılan kalır
                     }
                 }
+
+                if (identity.ValueKind == JsonValueKind.Object) ReadBadges(identity, message);
+
+                if (sender.TryGetProperty("slug", out var senderSlug) && senderSlug.ValueKind == JsonValueKind.String &&
+                    string.Equals(senderSlug.GetString(), "kickbot", StringComparison.OrdinalIgnoreCase))
+                {
+                    message.IsBot = true;
+                }
+            }
+
+            if (item.TryGetProperty("metadata", out var meta) && meta.ValueKind == JsonValueKind.String &&
+                (meta.GetString() ?? "").Contains("\"sender_type\":\"bot\"", StringComparison.OrdinalIgnoreCase))
+            {
+                message.IsBot = true;
             }
 
             return message;
+        }
+
+        // rozet adları ve renkleri: chat'te ismin önünde etiket olarak duruyorlar
+        private static readonly Dictionary<string, (string Text, string Color, int Order)> BadgeLookup =
+            new Dictionary<string, (string, string, int)>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["broadcaster"] = ("YAYINCI", "#C6F24E", 5),
+                ["moderator"] = ("MOD", "#7CE38B", 10),
+                ["staff"] = ("EKİP", "#8FD8FF", 15),
+                ["vip"] = ("VIP", "#FF7AC8", 20),
+                ["founder"] = ("KURUCU", "#FFC46B", 25),
+                ["subscriber"] = ("ABONE", "#8FA8FF", 30),
+                ["sub_gifter"] = ("HEDİYE", "#8FA8FF", 32),
+                ["og"] = ("OG", "#FFC46B", 35),
+                ["verified"] = ("ONAYLI", "#8FD8FF", 40)
+            };
+
+        private static void ReadBadges(JsonElement identity, ChatMessage message)
+        {
+            if (identity.TryGetProperty("badges", out var badges) && badges.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var badge in badges.EnumerateArray())
+                {
+                    if (badge.ValueKind != JsonValueKind.Object) continue;
+                    var type = badge.TryGetProperty("type", out var t) && t.ValueKind == JsonValueKind.String
+                        ? t.GetString() ?? "" : "";
+                    if (type.Length == 0) continue;
+
+                    var order = badge.TryGetProperty("sort_order", out var so) && so.ValueKind == JsonValueKind.Number
+                        ? so.GetInt32() : 50;
+
+                    if (BadgeLookup.TryGetValue(type, out var known))
+                    {
+                        message.Badges.Add(new ChatBadge
+                        {
+                            Text = known.Text,
+                            Kind = type.ToLowerInvariant(),
+                            Color = ParseColor(known.Color),
+                            Order = order + known.Order
+                        });
+                    }
+                    else
+                    {
+                        var text = badge.TryGetProperty("text", out var label) && label.ValueKind == JsonValueKind.String
+                            ? label.GetString() ?? type : type;
+                        message.Badges.Add(new ChatBadge
+                        {
+                            Text = text.ToUpperInvariant(),
+                            Kind = "other",
+                            Order = order + 60
+                        });
+                    }
+
+                    if (string.Equals(type, "moderator", StringComparison.OrdinalIgnoreCase)) message.IsModerator = true;
+                    if (string.Equals(type, "vip", StringComparison.OrdinalIgnoreCase)) message.IsVip = true;
+                }
+            }
+
+            // seviye rozeti ayrı geliyor: badges_v2 içinde metadata.level
+            if (identity.TryGetProperty("badges_v2", out var badgesV2) && badgesV2.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var badge in badgesV2.EnumerateArray())
+                {
+                    if (badge.ValueKind != JsonValueKind.Object) continue;
+                    if (!badge.TryGetProperty("name", out var name) || name.ValueKind != JsonValueKind.String) continue;
+                    if (!string.Equals(name.GetString(), "level", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!badge.TryGetProperty("metadata", out var meta) || meta.ValueKind != JsonValueKind.Object) continue;
+                    if (!meta.TryGetProperty("level", out var level) || level.ValueKind != JsonValueKind.Number) continue;
+
+                    message.Level = level.GetInt32();
+                    message.Badges.Add(new ChatBadge
+                    {
+                        Text = "LV " + message.Level.ToString(CultureInfo.InvariantCulture),
+                        Kind = "level",
+                        Color = Color.FromRgb(0xB8, 0xB0, 0xCC),
+                        Order = 70
+                    });
+                }
+            }
+
+            message.Badges.Sort((a, b) => a.Order.CompareTo(b.Order));
+        }
+
+        private static Color ParseColor(string hex)
+        {
+            try { return (Color)ColorConverter.ConvertFromString(hex); }
+            catch { return Color.FromRgb(0xC8, 0xC2, 0xD8); }
         }
 
         public async Task SendAsync(string apiBase, KickAuthService auth, ChannelIds ids, string text, CancellationToken token)

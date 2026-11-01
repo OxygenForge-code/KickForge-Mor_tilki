@@ -34,6 +34,9 @@ namespace KickForgeDesktop.Pages
         private bool _wasLive;
         private bool _chatVisible = true;
         private string _slug = "";
+        private ScrollViewer? _chatScroll;
+        private bool _chatAtBottom = true;
+        private int _pendingNew;
 
         public StudioPage(MainWindow shell)
         {
@@ -49,10 +52,15 @@ namespace KickForgeDesktop.Pages
             OpenButton.Click += (_, _) => _shell.OpenChannel();
             ChatToggle.Click += (_, _) => ToggleChat();
 
-            Loaded += (_, _) => OnLoaded();
+            Loaded += (_, _) =>
+            {
+                _chatScroll ??= FindScroll(ChatList);
+                OnLoaded();
+            };
             Unloaded += (_, _) => _chatTimer.Stop();
 
             UpdateAuthUi();
+            UpdateChatChrome();
         }
 
         // ---------------------------------------------------------------- oynatıcı
@@ -201,7 +209,52 @@ namespace KickForgeDesktop.Pages
         {
             _chatVisible = !_chatVisible;
             ChatPanel.Visibility = _chatVisible ? Visibility.Visible : Visibility.Collapsed;
+
+            // sütun da kapanmalı, yoksa sohbet gizlenince sağda boşluk kalıyor
+            ChatColumn.Width = _chatVisible ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+            ChatPanel.Margin = _chatVisible ? new Thickness(10, 0, 0, 0) : new Thickness(0);
+
             ChatToggle.Content = _chatVisible ? "sohbeti gizle" : "sohbeti göster";
+        }
+
+        private static ScrollViewer? FindScroll(DependencyObject? root)
+        {
+            if (root == null) return null;
+            for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                if (child is ScrollViewer viewer) return viewer;
+                var nested = FindScroll(child);
+                if (nested != null) return nested;
+            }
+            return null;
+        }
+
+        private void ChatList_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            _chatScroll ??= FindScroll(ChatList);
+            if (_chatScroll == null) return;
+
+            _chatAtBottom = _chatScroll.ScrollableHeight - _chatScroll.VerticalOffset < 14;
+            if (_chatAtBottom && _pendingNew > 0)
+            {
+                _pendingNew = 0;
+                JumpButton.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void Jump_Click(object sender, RoutedEventArgs e)
+        {
+            _pendingNew = 0;
+            JumpButton.Visibility = Visibility.Collapsed;
+            _chatAtBottom = true;
+            ScrollChatToEnd();
+        }
+
+        private void ScrollChatToEnd()
+        {
+            if (ChatList.Items.Count == 0) return;
+            ChatList.ScrollIntoView(ChatList.Items[ChatList.Items.Count - 1]);
         }
 
         // ---------------------------------------------------------------- sohbet
@@ -227,7 +280,10 @@ namespace KickForgeDesktop.Pages
 
                 ChatState.Text = _ids.ChannelId == 0
                     ? "kanal bulunamadı"
-                    : "bağlı · " + _seen.Count + " mesaj" + (added > 0 ? " · +" + added : "");
+                    : "bağlı · " + _chatTimer.Interval.TotalSeconds.ToString("0") + "sn'de bir" +
+                      (added > 0 ? " · +" + added : "");
+
+                UpdateChatChrome();
 
                 if (!_chatLogged)
                 {
@@ -249,13 +305,31 @@ namespace KickForgeDesktop.Pages
         private void Append(ChatMessage message)
         {
             var list = _shell.ChatFeed.Messages;
-            var atBottom = true;
-            if (list.Count > 0) atBottom = true; // basit davranış: her zaman sona kaydır
+            var follow = _chatAtBottom;
 
             list.Add(message);
             while (list.Count > 300) list.RemoveAt(0);
 
-            if (atBottom) ChatList.ScrollIntoView(list[list.Count - 1]);
+            if (follow)
+            {
+                ScrollChatToEnd();
+            }
+            else
+            {
+                // kullanıcı geçmişe bakıyor: onu aşağı sürüklemiyoruz
+                _pendingNew++;
+                JumpButton.Content = _pendingNew + " yeni mesaj ↓";
+                JumpButton.Visibility = Visibility.Visible;
+            }
+
+            UpdateChatChrome();
+        }
+
+        private void UpdateChatChrome()
+        {
+            var count = _shell.ChatFeed.Messages.Count;
+            ChatCount.Text = count == 0 ? "—" : count.ToString();
+            ChatEmpty.Visibility = count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private async void Send_Click(object sender, RoutedEventArgs e) => await SendAsync();

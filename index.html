@@ -390,6 +390,22 @@ button, input { font: inherit; color: inherit; }
 }
 .btn--violet:hover:not([disabled]) { background: rgba(180, 155, 255, .18); color: #cbb8ff; }
 
+/* windows uygulaması: başlıkta duran indirme düğmesi */
+.btn--exe {
+  gap: 8px;
+  background: rgba(198, 242, 78, .12);
+  color: var(--lime, #c6f24e);
+  border-color: rgba(198, 242, 78, .32);
+}
+.btn--exe:hover { background: rgba(198, 242, 78, .2); color: #d8ff74; }
+.btn--exe .btn__ext {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .04em;
+  color: rgba(198, 242, 78, .66);
+  padding-left: 1px;
+}
+
 .btn--icon {
   width: 34px;
   height: 34px;
@@ -1179,6 +1195,8 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
   .nav::-webkit-scrollbar { display: none; }
   .tab { padding: 8px 11px 10px; }
   .brand__slash { display: none; }
+  .btn--exe { padding: 0 13px; }
+  .btn--exe .btn__ext { display: none; }
   .identity {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -1297,6 +1315,9 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
     <symbol id="i-x" viewBox="0 0 24 24">
       <path d="M7 7l10 10M17 7L7 17" />
     </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+      <path d="M12 4v10M8.5 10.5 12 14l3.5-3.5M5 19h14" />
+    </symbol>
   </defs>
 </svg>
 
@@ -1349,6 +1370,15 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
         <svg class="ico ico--sm" aria-hidden="true"><use href="#i-logout" /></svg>
         <span>çıkış</span>
       </button>
+
+      <a class="btn btn--exe" id="downloadBtn"
+         href="https://github.com/OxygenForge-code/KickForge-Mor_tilki/releases/latest/download/KickForge.exe"
+         title="windows için tek dosya uygulama · kurulum yok, çift tıkla çalışır"
+         rel="noopener">
+        <svg class="ico ico--sm" aria-hidden="true"><use href="#i-download" /></svg>
+        <span>indir</span>
+        <span class="btn__ext">.exe</span>
+      </a>
 
       <a class="btn btn--icon" href="https://kick.com/mor-tilki" target="_blank" rel="noopener noreferrer" title="Kick'te aç" aria-label="Kick'te aç">
         <svg class="ico ico--sm" aria-hidden="true"><use href="#i-arrow-out" /></svg>
