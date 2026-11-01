@@ -35,10 +35,7 @@ namespace KickForgeDesktop.Pages
             LogList.ItemsSource = Log.Lines.Reverse().Take(120).ToList();
         }
 
-        private void Clear_Click(object sender, RoutedEventArgs e)
-        {
-            EventList.ItemsSource = null;
-        }
+        private void Clear_Click(object sender, RoutedEventArgs e) => _shell.ClearEvents();
 
         private void OpenLog_Click(object sender, RoutedEventArgs e) => _shell.OpenLogFile();
     }

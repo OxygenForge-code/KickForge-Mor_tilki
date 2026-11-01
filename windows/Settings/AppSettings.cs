@@ -25,7 +25,6 @@ namespace KickForgeDesktop.Settings
     public class AppSettings : INotifyPropertyChanged
     {
         private AppTheme _theme = AppTheme.ControlRoom;
-        private double _uiScale = 100;
         private bool _alwaysOnTop;
         private bool _minimizeToTray = true;
         private bool _startMinimized;
@@ -34,8 +33,9 @@ namespace KickForgeDesktop.Settings
         private double _opacity = 100;
         private double _windowWidth = 1180;
         private double _windowHeight = 760;
-        private double _windowLeft = double.NaN;
-        private double _windowTop = double.NaN;
+        // null = henüz kaydedilmiş konum yok (NaN json'a yazılamıyordu)
+        private double? _windowLeft;
+        private double? _windowTop;
         private bool _rememberBounds = true;
 
         private bool _notifyLive = true;
@@ -56,8 +56,6 @@ namespace KickForgeDesktop.Settings
         private int _historyMinutes = 180;
 
         private string _audioDeviceId = "";
-        private bool _duckOthers;
-        private bool _followDefaultDevice = true;
 
         private bool _hotkeysEnabled = true;
         private string _hotkeyShow = "Ctrl+Shift+K";
@@ -67,11 +65,6 @@ namespace KickForgeDesktop.Settings
         private bool _logToFile = true;
 
         public AppTheme Theme { get => _theme; set => Set(ref _theme, value); }
-        public double UiScale
-        {
-            get => _uiScale;
-            set => Set(ref _uiScale, Clamp(value, 80, 150));
-        }
 
         public bool AlwaysOnTop { get => _alwaysOnTop; set => Set(ref _alwaysOnTop, value); }
         public bool MinimizeToTray { get => _minimizeToTray; set => Set(ref _minimizeToTray, value); }
@@ -86,8 +79,8 @@ namespace KickForgeDesktop.Settings
 
         public double WindowWidth { get => _windowWidth; set => Set(ref _windowWidth, value); }
         public double WindowHeight { get => _windowHeight; set => Set(ref _windowHeight, value); }
-        public double WindowLeft { get => _windowLeft; set => Set(ref _windowLeft, value); }
-        public double WindowTop { get => _windowTop; set => Set(ref _windowTop, value); }
+        public double? WindowLeft { get => _windowLeft; set => Set(ref _windowLeft, value); }
+        public double? WindowTop { get => _windowTop; set => Set(ref _windowTop, value); }
         public bool RememberBounds { get => _rememberBounds; set => Set(ref _rememberBounds, value); }
 
         public bool NotifyLive { get => _notifyLive; set => Set(ref _notifyLive, value); }
@@ -131,8 +124,6 @@ namespace KickForgeDesktop.Settings
         }
 
         public string AudioDeviceId { get => _audioDeviceId; set => Set(ref _audioDeviceId, value ?? ""); }
-        public bool DuckOthers { get => _duckOthers; set => Set(ref _duckOthers, value); }
-        public bool FollowDefaultDevice { get => _followDefaultDevice; set => Set(ref _followDefaultDevice, value); }
 
         public bool HotkeysEnabled { get => _hotkeysEnabled; set => Set(ref _hotkeysEnabled, value); }
         public string HotkeyShow { get => _hotkeyShow; set => Set(ref _hotkeyShow, value); }
@@ -154,19 +145,6 @@ namespace KickForgeDesktop.Settings
         {
             if (double.IsNaN(value)) return min;
             return value < min ? min : value > max ? max : value;
-        }
-
-        public AppSettings Clone()
-        {
-            var copy = new AppSettings();
-            foreach (var p in typeof(AppSettings).GetProperties())
-            {
-                if (p.CanWrite && p.CanRead && p.PropertyType.IsValueType || p.PropertyType == typeof(string))
-                {
-                    p.SetValue(copy, p.GetValue(this));
-                }
-            }
-            return copy;
         }
     }
 }

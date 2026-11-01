@@ -34,6 +34,9 @@ namespace KickForgeDesktop
 
             Settings = SettingsStore.Load();
             Log.ToFile = Settings.LogToFile;
+
+            // ilk açılışta dosya oluşsun: kullanıcı neyin nerede olduğunu görsün
+            if (!System.IO.File.Exists(SettingsStore.FilePath)) SettingsStore.Save(Settings);
             ThemeManager.Apply(Settings.Theme);
 
             DispatcherUnhandledException += (_, args) =>

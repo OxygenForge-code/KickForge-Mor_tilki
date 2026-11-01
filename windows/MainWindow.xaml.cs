@@ -391,6 +391,13 @@ namespace KickForgeDesktop
             FeedAdded?.Invoke(this, EventArgs.Empty);
         }
 
+        public void ClearEvents()
+        {
+            _events.Clear();
+            FeedAdded?.Invoke(this, EventArgs.Empty);
+            AddEvent("geçmiş", "olay akışı temizlendi");
+        }
+
         // ---------------------------------------------------------------- bildirim
 
         private bool InQuietHours()
@@ -436,12 +443,12 @@ namespace KickForgeDesktop
         private void RestoreWindowPlacement()
         {
             if (!Settings.RememberBounds) return;
-            if (double.IsNaN(Settings.WindowLeft) || double.IsNaN(Settings.WindowTop)) return;
+            if (Settings.WindowLeft is not double savedLeft || Settings.WindowTop is not double savedTop) return;
 
             var width = Math.Max(MinWidth, Settings.WindowWidth);
             var height = Math.Max(MinHeight, Settings.WindowHeight);
-            var left = Settings.WindowLeft;
-            var top = Settings.WindowTop;
+            var left = savedLeft;
+            var top = savedTop;
 
             // ekran dışında kalmasın
             var virtualLeft = SystemParameters.VirtualScreenLeft;
