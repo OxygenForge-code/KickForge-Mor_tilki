@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using KickForgeDesktop.Settings;
@@ -47,9 +48,59 @@ namespace KickForgeDesktop
                 args.Handled = true;
             };
 
+            // tanılama: pencere açmadan kanal/sohbet zincirini dener (kickforge.exe --diag)
+            foreach (var arg in e.Args)
+            {
+                if (string.Equals(arg, "--diag", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunDiagnostics();
+                    return;
+                }
+            }
+
             var window = new MainWindow();
             MainWindow = window;
             window.Show();
+        }
+
+        private async void RunDiagnostics()
+        {
+            try
+            {
+                var settings = SettingsStore.Load();
+                var chat = new Services.ChatService();
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+                Log.Write("tanılama: kanal " + settings.ChannelSlug);
+                var ids = await chat.ResolveIdsAsync(settings.ChannelSlug, cts.Token);
+                Log.Write("tanılama: kanal no " + ids.ChannelId + " · yayıncı " + ids.BroadcasterId);
+
+                var messages = await chat.FetchHistoryAsync(ids, cts.Token);
+                Log.Write("tanılama: sohbet " + messages.Count + " mesaj");
+                foreach (var message in messages.Take(3))
+                {
+                    Log.Write("tanılama: " + message.Clock + " <" + message.User + "> " +
+                              (message.Content.Length > 60 ? message.Content.Substring(0, 60) : message.Content));
+                }
+
+                var webview = Microsoft.Web.WebView2.Core.CoreWebView2Environment.GetAvailableBrowserVersionString();
+                Log.Write("tanılama: webview2 " + (string.IsNullOrEmpty(webview) ? "yok" : webview));
+
+                // tek dosyaya gömülü yerel yükleyicinin gerçekten çalıştığını görmek için
+                var environment = await Microsoft.Web.WebView2.Core.CoreWebView2Environment.CreateAsync(
+                    null, System.IO.Path.Combine(SettingsStore.Folder, "webview-check"), null);
+                Log.Write("tanılama: webview ortamı hazır · " + environment.BrowserVersionString);
+
+                chat.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Log.Write("tanılama hatası: " + ex.Message);
+            }
+            finally
+            {
+                Shutdown();
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)

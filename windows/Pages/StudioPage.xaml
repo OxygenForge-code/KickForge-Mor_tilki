@@ -1,0 +1,111 @@
+<UserControl x:Class="KickForgeDesktop.Pages.StudioPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- üst şerit: tamamı native -->
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Orientation="Horizontal">
+                <Border x:Name="LiveChip" Style="{StaticResource Chip}" Background="{DynamicResource Surface2}">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="LiveDot" Width="6" Height="6" Fill="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                        <TextBlock x:Name="LiveText" Text="YAYIN KAPALI" Style="{StaticResource Mono}" FontSize="10" Margin="6,0,0,0" />
+                    </StackPanel>
+                </Border>
+                <TextBlock x:Name="ViewerText" Text="" Style="{StaticResource Mono}" FontSize="11" Margin="10,0,0,0"
+                           VerticalAlignment="Center" Foreground="{DynamicResource TextDim}" />
+            </StackPanel>
+
+            <TextBlock x:Name="TitleText" Grid.Column="1" Text="" Style="{StaticResource Mono}" FontSize="11"
+                       Margin="14,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextDim}"
+                       TextTrimming="CharacterEllipsis" />
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button x:Name="MuteButton" Content="sesi aç" Style="{StaticResource Ghost}" Padding="12,6" FontSize="11.5" />
+                <Button x:Name="ReloadButton" Content="yenile" Style="{StaticResource Ghost}" Padding="12,6" FontSize="11.5" Margin="6,0,0,0" />
+                <Button x:Name="OpenButton" Content="kick'te aç" Style="{StaticResource Ghost}" Padding="12,6" FontSize="11.5" Margin="6,0,0,0" />
+                <Button x:Name="ChatToggle" Content="sohbeti gizle" Style="{StaticResource Ghost}" Padding="12,6" FontSize="11.5" Margin="6,0,0,0" />
+            </StackPanel>
+        </Grid>
+
+        <!-- oynatıcı + sohbet -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Border Background="#000000" CornerRadius="12" ClipToBounds="True">
+                <Grid>
+                    <wv2:WebView2 x:Name="Player" DefaultBackgroundColor="#0B0A10" />
+                    <TextBlock x:Name="PlayerHint" Text="oynatıcı hazırlanıyor…" Style="{StaticResource Caption}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                               TextAlignment="Center" MaxWidth="420" />
+                </Grid>
+            </Border>
+
+            <Border x:Name="ChatPanel" Grid.Column="1" Width="352" Margin="10,0,0,0"
+                    Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                    CornerRadius="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Margin="14,12,10,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="sohbet" Style="{StaticResource H2}" />
+                            <TextBlock x:Name="ChatState" Text="bağlanıyor…" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <Button x:Name="AuthButton" Grid.Column="1" Content="giriş yap" Style="{StaticResource Ghost}"
+                                Padding="10,5" FontSize="11" VerticalAlignment="Center" Click="Auth_Click" />
+                    </Grid>
+
+                    <ListBox x:Name="ChatList" Grid.Row="1" Style="{StaticResource PlainList}" Margin="6,0,6,0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock TextWrapping="Wrap" FontSize="12.5">
+                                    <Run Text="{Binding Clock}" Foreground="{DynamicResource TextDim}" FontFamily="Cascadia Mono, Consolas" FontSize="9.5" />
+                                    <Run Text="  " />
+                                    <Run Text="{Binding User}" Foreground="{Binding UserBrush}" FontWeight="SemiBold" />
+                                    <Run Text="  " />
+                                    <Run Text="{Binding Content}" Foreground="{DynamicResource Text}" />
+                                </TextBlock>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <Grid Grid.Row="2" Margin="10,8,10,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="ChatInput" Style="{StaticResource Field}" IsEnabled="False"
+                                 KeyDown="ChatInput_KeyDown" />
+                        <Button x:Name="SendButton" Grid.Column="1" Content="gönder" Style="{StaticResource Primary}"
+                                Margin="6,0,0,0" Padding="12,8" FontSize="11.5" Click="Send_Click" IsEnabled="False" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

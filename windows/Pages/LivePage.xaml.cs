@@ -17,8 +17,8 @@ namespace KickForgeDesktop.Pages
             _shell = shell;
             InitializeComponent();
 
-            BtnWatch.Click += (_, _) => _shell.OpenChannel();
-            BtnChat.Click += (_, _) => _shell.OpenChat();
+            BtnWatch.Click += (_, _) => _shell.ShowStudio();
+            BtnChat.Click += (_, _) => _shell.ShowStudio();
             BtnRefresh.Click += (_, _) => _shell.RefreshNow(true);
             SyncToggles();
         }

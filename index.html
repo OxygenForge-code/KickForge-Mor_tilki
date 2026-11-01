@@ -1612,11 +1612,15 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
             ayarlarını <code>%APPDATA%\KickForge\native</code> altında tutuyor.
             <strong>Electron değil:</strong> C# + WPF ile yazılmış native bir
             uygulama; içinde gömülü tarayıcı yok, siteyi yüklemiyor.
-            Bilerek aynı ekran değil — masaüstünün işi arkada durmak: yayın
-            başladı/bitti bildirimi ve kendi uyarı sesleri, saatlerce biriken
-            izleyici eğrisi, ses çıkışı (kulaklık) seçimi + 528 Hz test tonu,
-            her zaman üstte, kapatınca tepside kalma, sistem kısayolları,
-            windows ile birlikte açılma, sessiz saatler, dört tema.
+            Uygulamada <strong>yayın ve sohbet de var</strong>: video, Windows'un
+            kendi Edge WebView2 bileşeninde oynuyor (ayrı indirme yok); sohbet
+            native — mesajlar Kick'in kendi ucundan okunuyor, yazmak için
+            uygulamadan Kick girişi yapılıyor (OAuth + PKCE, token'lar DPAPI ile
+            şifreli saklanıyor). Üstüne: yayın başladı/bitti bildirimi ve kendi
+            uyarı sesleri, saatlerce biriken izleyici eğrisi, ses çıkışı
+            (kulaklık) seçimi + 528 Hz test tonu, her zaman üstte, kapatınca
+            tepside kalma, sistem kısayolları, windows ile birlikte açılma,
+            sessiz saatler, dört tema.
             Derleme GitHub Actions'ta, kaynaktan <code>dotnet publish</code>
             ile de çıkıyor.
           </dd>

@@ -125,6 +125,8 @@
                 <StackPanel Grid.Row="1" Margin="0,14,0,0">
                     <RadioButton x:Name="NavLive" Style="{StaticResource Nav}" Content="canlı" Tag="&#xE7F4;" IsChecked="True"
                                  Checked="Nav_Checked" />
+                    <RadioButton x:Name="NavStudio" Style="{StaticResource Nav}" Content="yayın &amp; sohbet" Tag="&#xE714;"
+                                 Checked="Nav_Checked" />
                     <RadioButton x:Name="NavHistory" Style="{StaticResource Nav}" Content="geçmiş" Tag="&#xE81C;"
                                  Checked="Nav_Checked" />
                     <RadioButton x:Name="NavSettings" Style="{StaticResource Nav}" Content="ayarlar" Tag="&#xE713;"

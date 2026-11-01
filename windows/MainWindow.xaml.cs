@@ -23,6 +23,7 @@ namespace KickForgeDesktop
         private readonly DispatcherTimer _timer;
         private readonly List<FeedEvent> _events = new List<FeedEvent>();
         private readonly LivePage _livePage;
+        private readonly StudioPage _studioPage;
         private readonly HistoryPage _historyPage;
         private readonly SettingsPage _settingsPage;
         private readonly AboutPage _aboutPage;
@@ -40,6 +41,8 @@ namespace KickForgeDesktop
         public AppSettings Settings { get; }
         public HistoryStore History { get; } = new HistoryStore();
         public AudioService Audio { get; } = new AudioService();
+        public KickAuthService Auth { get; } = new KickAuthService();
+        public ChatFeed ChatFeed { get; } = new ChatFeed();
         public ChannelStats? Latest { get; private set; }
         public string LastSource => _client.LastSource;
         public string LiveDurationText => FormatDuration();
@@ -61,7 +64,10 @@ namespace KickForgeDesktop
             _tray.ExitRequested += ExitApp;
             _tray.Update("kanal: " + Settings.ChannelSlug, false, 0, "KickForge · " + Settings.ChannelSlug);
 
+            Auth.Load();
+
             _livePage = new LivePage(this);
+            _studioPage = new StudioPage(this);
             _historyPage = new HistoryPage(this);
             _settingsPage = new SettingsPage(this);
             _aboutPage = new AboutPage(this);
@@ -318,6 +324,7 @@ namespace KickForgeDesktop
                 HeaderDot.Fill = textDim;
                 HeaderStateText.Text = _failures > 0 ? "BAĞLANTI YOK" : "BAĞLANIYOR";
                 _livePage.Show(null, StatusText.Text, _failures == 0, latency, "son değişiklik: " + DateTime.Now.ToString("HH:mm:ss"));
+                _studioPage.Show(null);
                 return;
             }
 
@@ -343,6 +350,7 @@ namespace KickForgeDesktop
                          (stats.Stale ? " · son iyi veri" : "");
 
             _livePage.Show(stats, stats.Stale ? "eski veri" : "bağlı", !stats.Stale, latency, detail);
+            _studioPage.Show(stats);
 
             if (_tray != null)
             {
@@ -384,7 +392,7 @@ namespace KickForgeDesktop
             StatusDot.Fill = ok ? ThemeManager.Get("Okay") : ThemeManager.Get("Danger");
         }
 
-        private void AddEvent(string kind, string text)
+        public void AddEvent(string kind, string text)
         {
             _events.Insert(0, new FeedEvent { Time = DateTime.Now, Kind = kind, Text = text });
             if (_events.Count > 200) _events.RemoveRange(150, _events.Count - 150);
@@ -494,6 +502,7 @@ namespace KickForgeDesktop
             SaveSettings();
             History.Save();
             _timer.Stop();
+            _studioPage.Dispose();
             _tray?.Dispose();
             _hotkeys.Dispose();
             _client.Dispose();
@@ -537,6 +546,7 @@ namespace KickForgeDesktop
         {
             if (PageHost == null) return;
             if (NavLive.IsChecked == true) PageHost.Content = _livePage;
+            else if (NavStudio.IsChecked == true) PageHost.Content = _studioPage;
             else if (NavHistory.IsChecked == true) PageHost.Content = _historyPage;
             else if (NavSettings.IsChecked == true) PageHost.Content = _settingsPage;
             else if (NavAbout.IsChecked == true) PageHost.Content = _aboutPage;
@@ -556,6 +566,8 @@ namespace KickForgeDesktop
                 Log.Write("bağlantı açılamadı: " + ex.Message);
             }
         }
+
+        public void ShowStudio() => NavStudio.IsChecked = true;
 
         public void OpenChannel() => OpenLink("https://kick.com/" + Settings.ChannelSlug);
 
