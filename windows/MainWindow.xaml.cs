@@ -114,9 +114,13 @@ namespace KickForgeDesktop
             RestartHotkeys();
             RestartTimer();
 
-            if (Settings.StartMinimized && !App.Current.StartedWithWindows)
+            // "açılışta küçük başla" yalnızca windows açılışında geçerli;
+            // exe'ye çift tıklayan kişi pencereyi bekler (eskiden tersiydi ve
+            // uygulama tepside açılıyordu).
+            if (Settings.StartMinimized && App.Current.StartedWithWindows)
             {
                 Hide();
+                Log.Write("windows açılışı: tepside başladı");
             }
 
             _ = RefreshAsync(false);
@@ -518,7 +522,7 @@ namespace KickForgeDesktop
             Close();
         }
 
-        private void ShowFromTray()
+        public void ShowFromTray()
         {
             Dispatcher.Invoke(() =>
             {

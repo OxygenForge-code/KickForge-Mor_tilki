@@ -26,6 +26,10 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # IncludeAllContentForSelfExtract şart: onsuz sıkıştırılmış tek dosya
+      # paketinde wpf'in ekrana çizim yolu bozuluyor ve pencere kapkara açılıyor
+      # (içeriden RenderTargetBitmap doğru çiziyordu, o yüzden uzun süre
+      # görünmedi). Bu ayarla exe 66 mb kalıyor ve ekrana normal çiziliyor.
       - name: derle
         shell: pwsh
         run: |
@@ -33,6 +37,7 @@ jobs:
             -c Release -r win-x64 --self-contained true `
             -p:PublishSingleFile=true `
             -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:IncludeAllContentForSelfExtract=true `
             -p:EnableCompressionInSingleFile=true `
             -p:DebugType=none `
             -o out

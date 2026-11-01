@@ -8,7 +8,11 @@ namespace KickForgeDesktop
 {
     public partial class App : Application
     {
+        private const string ShowEventName = "KickForge.Desktop.Show";
+
         private Mutex? _singleInstance;
+        private EventWaitHandle? _showSignal;
+        private System.Threading.Thread? _showListener;
 
         public new static App Current => (App)Application.Current;
 
@@ -22,9 +26,20 @@ namespace KickForgeDesktop
             _singleInstance = new Mutex(true, "KickForge.Desktop.SingleInstance", out var isFirst);
             if (!isFirst)
             {
+                // ikinci tıklama: açık olan kopyaya "pencereyi göster" de
+                try
+                {
+                    EventWaitHandle.OpenExisting(ShowEventName).Set();
+                }
+                catch
+                {
+                    // ilk kopya sinyali dinlemiyorsa yapacak bir şey yok
+                }
                 Shutdown();
                 return;
             }
+
+            ListenForShowSignal();
 
             base.OnStartup(e);
 
@@ -64,6 +79,24 @@ namespace KickForgeDesktop
 
             if (e.Args.Contains("--studio")) window.ShowStudio();
 
+            // ekranda gerçekten ne göründüğünü ölç (kickforge.exe --check)
+            if (e.Args.Contains("--check"))
+            {
+                window.Dispatcher.InvokeAsync(async () =>
+                {
+                    // "açılışta küçük başla" açık olsa da kontrol için pencereyi göster
+                    await System.Threading.Tasks.Task.Delay(800);
+                    window.Show();
+                    window.WindowState = WindowState.Normal;
+                    window.Topmost = true;
+                    window.Activate();
+                    await System.Threading.Tasks.Task.Delay(3000);
+                    CheckOnScreen(window);
+                    window.Close();
+                    Shutdown();
+                }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            }
+
             // arayüzü içeriden PNG'ye çiz (kickforge.exe --shot)
             if (e.Args.Contains("--shot"))
             {
@@ -75,6 +108,86 @@ namespace KickForgeDesktop
                     Shutdown();
                 }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             }
+        }
+
+        /// <summary>pencerenin ekrandaki gerçek görüntüsünü yakalar ve parlaklığını yazar.</summary>
+        private static void CheckOnScreen(MainWindow window)
+        {
+            try
+            {
+                var topLeft = window.PointToScreen(new Point(0, 0));
+                var bottomRight = window.PointToScreen(new Point(window.ActualWidth, window.ActualHeight));
+                var width = (int)Math.Max(1, bottomRight.X - topLeft.X);
+                var height = (int)Math.Max(1, bottomRight.Y - topLeft.Y);
+
+                Log.Write("kontrol: görünür=" + window.IsVisible + " durum=" + window.WindowState +
+                          " boyut=" + width + "x" + height + " konum=" + (int)topLeft.X + "," + (int)topLeft.Y +
+                          " dpi=" + window.Dispatcher.Thread.CurrentCulture.Name);
+
+                using var bitmap = new System.Drawing.Bitmap(width, height);
+                using (var graphics = System.Drawing.Graphics.FromImage(bitmap))
+                {
+                    graphics.CopyFromScreen((int)topLeft.X, (int)topLeft.Y, 0, 0, new System.Drawing.Size(width, height));
+                }
+
+                long total = 0;
+                var samples = 0;
+                var bright = 0;
+                for (var y = 0; y < height; y += 7)
+                {
+                    for (var x = 0; x < width; x += 7)
+                    {
+                        var c = bitmap.GetPixel(x, y);
+                        var luma = (c.R * 299 + c.G * 587 + c.B * 114) / 1000;
+                        total += luma;
+                        samples++;
+                        if (luma > 40) bright++;
+                    }
+                }
+
+                var path = System.IO.Path.Combine(SettingsStore.Folder, "ekran.png");
+                bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                Log.Write("kontrol: ortalama parlaklık=" + (samples == 0 ? 0 : total / samples) +
+                          " · aydınlık piksel=%" + (samples == 0 ? 0 : bright * 100 / samples) +
+                          " · " + path);
+            }
+            catch (Exception ex)
+            {
+                Log.Write("kontrol hatası: " + ex.Message);
+            }
+        }
+
+        private void ListenForShowSignal()
+        {
+            try
+            {
+                _showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+            }
+            catch (Exception ex)
+            {
+                Log.Write("göster sinyali kurulamadı: " + ex.Message);
+                return;
+            }
+
+            _showListener = new System.Threading.Thread(() =>
+            {
+                while (_showSignal.WaitOne())
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (MainWindow is MainWindow window)
+                        {
+                            window.ShowFromTray();
+                            Log.Write("ikinci tıklama: pencere öne getirildi");
+                        }
+                    }));
+                }
+            })
+            {
+                IsBackground = true,
+                Name = "kickforge-show-listener"
+            };
+            _showListener.Start();
         }
 
         private static void SaveShot(MainWindow window)
