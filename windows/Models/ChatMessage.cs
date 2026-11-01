@@ -5,13 +5,18 @@ using System.Windows.Media;
 
 namespace KickForgeDesktop.Models
 {
-    /// <summary>sohbette ismin önünde duran küçük rozet (MOD, VIP, LV 11…).</summary>
+    /// <summary>sohbette ismin önünde duran küçük rozet (kalkan, taç, yıldız…).</summary>
     public class ChatBadge
     {
         public string Text { get; set; } = "";
         public string Kind { get; set; } = "other";
+
+        /// <summary>material design ikon anahtarı; boşsa rozet yalnızca yazıyla çizilir.</summary>
+        public string Icon { get; set; } = "";
+
         public Color Color { get; set; } = Color.FromRgb(0xC8, 0xC2, 0xD8);
         public int Order { get; set; }
+        public string Hint { get; set; } = "";
     }
 
     public class ChatMessage
@@ -27,6 +32,10 @@ namespace KickForgeDesktop.Models
         public Brush UserBrush { get; set; } = Brushes.LightGray;
 
         public List<ChatBadge> Badges { get; } = new List<ChatBadge>();
+
+        /// <summary>satır bir kez canlandı mı? geri kaydırınca tekrar oynamasın.</summary>
+        public bool Animated { get; set; }
+
         public bool IsModerator { get; set; }
         public bool IsVip { get; set; }
         public bool IsBot { get; set; }

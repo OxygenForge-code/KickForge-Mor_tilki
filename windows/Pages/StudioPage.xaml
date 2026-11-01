@@ -42,7 +42,17 @@
             <StackPanel Orientation="Horizontal">
                 <Border x:Name="LiveChip" Style="{StaticResource Chip}" Background="{DynamicResource Surface2}">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse x:Name="LiveDot" Width="6" Height="6" Fill="{DynamicResource TextDim}" VerticalAlignment="Center" />
+                        <!-- canlıyken nokta nabız atıyor, dışarı doğru halka yayılıyor -->
+                        <Grid Width="8" Height="8" VerticalAlignment="Center">
+                            <Ellipse x:Name="LiveRing" Width="6" Height="6" Fill="{DynamicResource Accent}" Opacity="0"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                            <Ellipse x:Name="LiveDot" Width="6" Height="6" Fill="{DynamicResource TextDim}"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
                         <TextBlock x:Name="LiveText" Text="YAYIN KAPALI" Style="{StaticResource Mono}" FontSize="10" Margin="6,0,0,0" />
                     </StackPanel>
                 </Border>
@@ -124,7 +134,7 @@
                     <!-- mesajlar -->
                     <Grid Grid.Row="1">
                         <ListBox x:Name="ChatList" Style="{StaticResource PlainList}" ItemContainerStyle="{StaticResource ChatItem}"
-                                 Margin="6,0,6,0"
+                                 Margin="6,0,4,4"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  ScrollViewer.ScrollChanged="ChatList_ScrollChanged">
@@ -153,8 +163,13 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBox x:Name="ChatInput" Style="{StaticResource Field}" IsEnabled="False"
-                                 MaxLength="500" KeyDown="ChatInput_KeyDown" />
+                        <Grid>
+                            <TextBox x:Name="ChatInput" Style="{StaticResource Field}" IsEnabled="False"
+                                     MaxLength="500" KeyDown="ChatInput_KeyDown" TextChanged="ChatInput_TextChanged" />
+                            <TextBlock x:Name="ChatPlaceholder" Text="mesaj yaz…" IsHitTestVisible="False"
+                                       Style="{StaticResource Mono}" FontSize="11.5" Margin="11,0,0,0"
+                                       VerticalAlignment="Center" Foreground="{DynamicResource TextDim}" Opacity="0.7" />
+                        </Grid>
                         <Button x:Name="SendButton" Grid.Column="1" Content="gönder" Style="{StaticResource Primary}"
                                 Margin="6,0,0,0" Padding="12,8" FontSize="11.5" Click="Send_Click" IsEnabled="False" />
                     </Grid>

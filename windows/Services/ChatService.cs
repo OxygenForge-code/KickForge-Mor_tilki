@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using KickForgeDesktop.Controls;
 using KickForgeDesktop.Models;
 
 namespace KickForgeDesktop.Services
@@ -163,19 +164,19 @@ namespace KickForgeDesktop.Services
             return message;
         }
 
-        // rozet adları ve renkleri: chat'te ismin önünde etiket olarak duruyorlar
-        private static readonly Dictionary<string, (string Text, string Color, int Order)> BadgeLookup =
-            new Dictionary<string, (string, string, int)>(StringComparer.OrdinalIgnoreCase)
+        // rozet adları, renkleri ve ikonları: sohbette ismin önünde duruyorlar
+        private static readonly Dictionary<string, (string Text, string Color, int Order, string Icon, string Hint)> BadgeLookup =
+            new Dictionary<string, (string, string, int, string, string)>(StringComparer.OrdinalIgnoreCase)
             {
-                ["broadcaster"] = ("YAYINCI", "#C6F24E", 5),
-                ["moderator"] = ("MOD", "#7CE38B", 10),
-                ["staff"] = ("EKİP", "#8FD8FF", 15),
-                ["vip"] = ("VIP", "#FF7AC8", 20),
-                ["founder"] = ("KURUCU", "#FFC46B", 25),
-                ["subscriber"] = ("ABONE", "#8FA8FF", 30),
-                ["sub_gifter"] = ("HEDİYE", "#8FA8FF", 32),
-                ["og"] = ("OG", "#FFC46B", 35),
-                ["verified"] = ("ONAYLI", "#8FD8FF", 40)
+                ["broadcaster"] = ("YAYINCI", "#C6F24E", 5, Mdi.Broadcaster, "yayıncı"),
+                ["moderator"] = ("MOD", "#7CE38B", 10, Mdi.Moderator, "moderatör"),
+                ["staff"] = ("EKİP", "#8FD8FF", 15, Mdi.Staff, "kick ekibi"),
+                ["vip"] = ("VIP", "#FF7AC8", 20, Mdi.Vip, "vip"),
+                ["founder"] = ("KURUCU", "#FFC46B", 25, Mdi.Founder, "kurucu"),
+                ["subscriber"] = ("ABONE", "#8FA8FF", 30, Mdi.Subscriber, "abone"),
+                ["sub_gifter"] = ("HEDİYE", "#8FA8FF", 32, Mdi.Gifter, "abone hediye etti"),
+                ["og"] = ("OG", "#FFC46B", 35, Mdi.Og, "og"),
+                ["verified"] = ("ONAYLI", "#8FD8FF", 40, Mdi.Verified, "onaylı")
             };
 
         private static void ReadBadges(JsonElement identity, ChatMessage message)
@@ -198,6 +199,8 @@ namespace KickForgeDesktop.Services
                         {
                             Text = known.Text,
                             Kind = type.ToLowerInvariant(),
+                            Icon = known.Icon,
+                            Hint = known.Hint,
                             Color = ParseColor(known.Color),
                             Order = order + known.Order
                         });
@@ -210,6 +213,7 @@ namespace KickForgeDesktop.Services
                         {
                             Text = text.ToUpperInvariant(),
                             Kind = "other",
+                            Hint = text,
                             Order = order + 60
                         });
                     }
@@ -233,9 +237,11 @@ namespace KickForgeDesktop.Services
                     message.Level = level.GetInt32();
                     message.Badges.Add(new ChatBadge
                     {
-                        Text = "LV " + message.Level.ToString(CultureInfo.InvariantCulture),
+                        Text = message.Level.ToString(CultureInfo.InvariantCulture),
                         Kind = "level",
-                        Color = Color.FromRgb(0xB8, 0xB0, 0xCC),
+                        Icon = Mdi.Level,
+                        Hint = "seviye " + message.Level,
+                        Color = Color.FromRgb(0xC2, 0xB8, 0xE6),
                         Order = 70
                     });
                 }

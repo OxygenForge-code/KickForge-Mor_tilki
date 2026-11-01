@@ -57,7 +57,8 @@ namespace KickForgeDesktop
 
             DispatcherUnhandledException += (_, args) =>
             {
-                Log.Write("beklenmeyen hata: " + args.Exception.Message);
+                // tam iz: sorun tekrar ederse nerede olduğu belli olsun
+                Log.Write("beklenmeyen hata: " + args.Exception);
                 MessageBox.Show("Beklenmeyen bir hata oldu:\n\n" + args.Exception.Message,
                     "KickForge", MessageBoxButton.OK, MessageBoxImage.Warning);
                 args.Handled = true;

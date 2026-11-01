@@ -11,6 +11,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using KickForgeDesktop.Controls;
 using KickForgeDesktop.Models;
 using KickForgeDesktop.Pages;
 using KickForgeDesktop.Services;
@@ -661,6 +662,9 @@ namespace KickForgeDesktop
             else if (NavHistory.IsChecked == true) PageHost.Content = _historyPage;
             else if (NavSettings.IsChecked == true) PageHost.Content = _settingsPage;
             else if (NavAbout.IsChecked == true) PageHost.Content = _aboutPage;
+
+            // sayfalar sertçe değişmesin: soldan süzülerek gelsin
+            if (PageHost.Content is UIElement page) Motion.SlideIn(page, 18, Motion.Normal);
 
             // sohbet döngüsü yalnızca bu sayfa açıkken çalışsın
             _studioPage.SetActive(NavStudio.IsChecked == true);

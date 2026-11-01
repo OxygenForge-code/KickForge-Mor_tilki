@@ -6,7 +6,10 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using KickForgeDesktop.Controls;
 using KickForgeDesktop.Models;
 using KickForgeDesktop.Services;
 using KickForgeDesktop.Settings;
@@ -37,6 +40,8 @@ namespace KickForgeDesktop.Pages
         private ScrollViewer? _chatScroll;
         private bool _chatAtBottom = true;
         private int _pendingNew;
+        private int _lastChatCount = -1;
+        private Storyboard? _livePulse;
 
         public StudioPage(MainWindow shell)
         {
@@ -210,6 +215,8 @@ namespace KickForgeDesktop.Pages
             _chatVisible = !_chatVisible;
             ChatPanel.Visibility = _chatVisible ? Visibility.Visible : Visibility.Collapsed;
 
+            if (_chatVisible) Motion.SlideIn(ChatPanel, -14, Motion.Normal);
+
             // sütun da kapanmalı, yoksa sohbet gizlenince sağda boşluk kalıyor
             ChatColumn.Width = _chatVisible ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
             ChatPanel.Margin = _chatVisible ? new Thickness(10, 0, 0, 0) : new Thickness(0);
@@ -251,10 +258,36 @@ namespace KickForgeDesktop.Pages
             ScrollChatToEnd();
         }
 
+        /// <summary>yeni mesaj düğmesi: yerinden süzülerek gelir, sayı değişince nabız atar.</summary>
+        private void ShowJumpButton()
+        {
+            JumpButton.Content = _pendingNew + " yeni mesaj ↓";
+
+            if (JumpButton.Visibility != Visibility.Visible)
+            {
+                JumpButton.Visibility = Visibility.Visible;
+                Motion.RiseIn(JumpButton, 12, Motion.Normal);
+            }
+            else
+            {
+                Motion.Pulse(JumpButton, 1.06, 210);
+            }
+        }
+
         private void ScrollChatToEnd()
         {
             if (ChatList.Items.Count == 0) return;
-            ChatList.ScrollIntoView(ChatList.Items[ChatList.Items.Count - 1]);
+
+            _chatScroll ??= FindScroll(ChatList);
+
+            // ilk dolum / uzun atlama: doğrudan, sonrası yumuşak kaydırma
+            if (_chatScroll == null || _chatScroll.ScrollableHeight - _chatScroll.VerticalOffset > 900)
+            {
+                ChatList.ScrollIntoView(ChatList.Items[ChatList.Items.Count - 1]);
+                return;
+            }
+
+            Motion.ScrollToEnd(_chatScroll);
         }
 
         // ---------------------------------------------------------------- sohbet
@@ -312,14 +345,14 @@ namespace KickForgeDesktop.Pages
 
             if (follow)
             {
-                ScrollChatToEnd();
+                // satır yerleşmeden kaydırma hesaplanmıyor: bir sonraki turda kaydır
+                Dispatcher.BeginInvoke(new Action(ScrollChatToEnd), DispatcherPriority.Loaded);
             }
             else
             {
                 // kullanıcı geçmişe bakıyor: onu aşağı sürüklemiyoruz
                 _pendingNew++;
-                JumpButton.Content = _pendingNew + " yeni mesaj ↓";
-                JumpButton.Visibility = Visibility.Visible;
+                ShowJumpButton();
             }
 
             UpdateChatChrome();
@@ -330,9 +363,24 @@ namespace KickForgeDesktop.Pages
             var count = _shell.ChatFeed.Messages.Count;
             ChatCount.Text = count == 0 ? "—" : count.ToString();
             ChatEmpty.Visibility = count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+            if (count != _lastChatCount)
+            {
+                if (_lastChatCount >= 0) Motion.Pulse(ChatCountChip, 1.12, 200);
+                _lastChatCount = count;
+            }
         }
 
         private async void Send_Click(object sender, RoutedEventArgs e) => await SendAsync();
+
+        private void ChatInput_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var empty = ChatInput.Text.Length == 0;
+            ChatPlaceholder.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+
+            // boşken imleç yerine ipucu görünsün: ikisi üst üste binmesin
+            ChatInput.CaretBrush = empty ? Brushes.Transparent : ThemeManager.Get("Accent");
+        }
 
         private async void ChatInput_KeyDown(object sender, KeyEventArgs e)
         {
@@ -364,6 +412,7 @@ namespace KickForgeDesktop.Pages
                 await _chat.SendAsync(_shell.Settings.ApiBase, _shell.Auth, _ids, text, cts.Token);
 
                 ChatInput.Text = "";
+                Motion.Pulse(SendButton, 1.12, 240);
                 ChatState.Text = "gönderildi · " + DateTime.Now.ToString("HH:mm:ss");
                 _shell.AddEvent("sohbet", "mesaj gönderildi: " + Trim(text, 60));
             }
@@ -418,6 +467,9 @@ namespace KickForgeDesktop.Pages
             ChatInput.IsEnabled = loggedIn;
             SendButton.IsEnabled = loggedIn;
             ChatInput.ToolTip = loggedIn ? "mesaj yaz, enter ile gönder" : "yazmak için giriş yap";
+            ChatPlaceholder.Text = loggedIn ? "mesaj yaz…" : "yazmak için giriş yap";
+            ChatPlaceholder.Visibility = ChatInput.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            ChatInput.CaretBrush = ChatInput.Text.Length == 0 ? Brushes.Transparent : ThemeManager.Get("Accent");
             if (loggedIn)
             {
                 ChatInput.Focus();
@@ -433,6 +485,7 @@ namespace KickForgeDesktop.Pages
                 LiveChip.Background = ThemeManager.Get("Surface2");
                 LiveDot.Fill = ThemeManager.Get("TextDim");
                 LiveText.Text = "YAYIN KAPALI";
+                StopLivePulse();
                 ViewerText.Text = "";
                 TitleText.Text = "kanal verisi bekleniyor…";
                 if (_playerReady && !_playerFailed) ShowOffline();
@@ -459,16 +512,89 @@ namespace KickForgeDesktop.Pages
             LiveDot.Fill = stats.IsLive ? ThemeManager.Get("AccentInk") : ThemeManager.Get("TextDim");
             LiveText.Text = stats.IsLive ? "CANLI" : "YAYIN KAPALI";
             LiveText.Foreground = stats.IsLive ? ThemeManager.Get("AccentInk") : ThemeManager.Get("TextDim");
-            ViewerText.Text = stats.IsLive ? stats.ViewerCount.ToString("N0") + " izleyici" : "";
+            var viewers = stats.IsLive ? stats.ViewerCount.ToString("N0") + " izleyici" : "";
+            if (ViewerText.Text != viewers && stats.IsLive) Motion.RiseIn(ViewerText, 4, Motion.Quick);
+            ViewerText.Text = viewers;
             TitleText.Text = stats.SessionTitle;
+
+            if (stats.IsLive) StartLivePulse();
+            else StopLivePulse();
 
             if (stats.IsLive && _playerReady && !_playerFailed) Overlay.Visibility = Visibility.Collapsed;
             if (!stats.IsLive && !_playerReady) _ = StartPlayerAsync();
         }
 
+        /// <summary>canlı göstergesi: nokta nefes alırken dışa doğru halka yayılıyor.</summary>
+        private void StartLivePulse()
+        {
+            if (_livePulse != null) return;
+
+            var ring = (ScaleTransform)LiveRing.RenderTransform;
+            var ease = new SineEase { EasingMode = EasingMode.EaseOut };
+
+            var ringOpacity = new DoubleAnimation(0.7, 0, TimeSpan.FromSeconds(1.7))
+            {
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = ease
+            };
+            var ringX = new DoubleAnimation(0.7, 2.8, TimeSpan.FromSeconds(1.7))
+            {
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = ease
+            };
+            var ringY = new DoubleAnimation(0.7, 2.8, TimeSpan.FromSeconds(1.7))
+            {
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = ease
+            };
+            var breathe = new DoubleAnimation(1, 0.45, TimeSpan.FromSeconds(0.9))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+            };
+
+            var storyboard = new Storyboard();
+
+            Storyboard.SetTarget(ringOpacity, LiveRing);
+            Storyboard.SetTargetProperty(ringOpacity, new PropertyPath(UIElement.OpacityProperty));
+
+            Storyboard.SetTarget(ringX, ring);
+            Storyboard.SetTargetProperty(ringX, new PropertyPath(ScaleTransform.ScaleXProperty));
+
+            Storyboard.SetTarget(ringY, ring);
+            Storyboard.SetTargetProperty(ringY, new PropertyPath(ScaleTransform.ScaleYProperty));
+
+            Storyboard.SetTarget(breathe, LiveDot);
+            Storyboard.SetTargetProperty(breathe, new PropertyPath(UIElement.OpacityProperty));
+
+            storyboard.Children.Add(ringOpacity);
+            storyboard.Children.Add(ringX);
+            storyboard.Children.Add(ringY);
+            storyboard.Children.Add(breathe);
+
+            storyboard.Begin();
+            _livePulse = storyboard;
+        }
+
+        private void StopLivePulse()
+        {
+            _livePulse?.Stop();
+            _livePulse = null;
+
+            LiveRing.Opacity = 0;
+            LiveDot.Opacity = 1;
+            if (LiveRing.RenderTransform is ScaleTransform ring)
+            {
+                ring.ScaleX = 1;
+                ring.ScaleY = 1;
+            }
+        }
+
         public void Dispose()
         {
             _chatTimer.Stop();
+            StopLivePulse();
             _chat.Dispose();
         }
 

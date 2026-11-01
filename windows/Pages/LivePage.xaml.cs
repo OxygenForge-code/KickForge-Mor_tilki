@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 using KickForgeDesktop.Models;
 
 namespace KickForgeDesktop.Pages
@@ -11,6 +13,8 @@ namespace KickForgeDesktop.Pages
     {
         private readonly MainWindow _shell;
         private bool _syncing;
+        private DispatcherTimer? _count;
+        private double _shownViewers = -1;
 
         public LivePage(MainWindow shell)
         {
@@ -56,6 +60,7 @@ namespace KickForgeDesktop.Pages
                 TallyText.Text = "OFF AIR";
                 TallyText.Foreground = ThemeManager.Get("TextDim");
                 ViewerText.Text = "—";
+                _shownViewers = -1;
                 ViewerLabel.Text = "izleyici";
                 TitleText.Text = "kanal verisi bekleniyor…";
                 StaleBar.Visibility = Visibility.Visible;
@@ -77,7 +82,7 @@ namespace KickForgeDesktop.Pages
             TallyText.Text = live ? "ON AIR" : "OFF AIR";
             TallyText.Foreground = live ? accentInk : ThemeManager.Get("TextDim");
 
-            ViewerText.Text = live ? stats.ViewerCount.ToString("N0") : "0";
+            CountViewers(live ? stats.ViewerCount : 0);
             ViewerLabel.Text = live ? "izleyici" : "yayın kapalı";
             TitleText.Text = string.IsNullOrWhiteSpace(stats.SessionTitle)
                 ? (live ? "başlıksız yayın" : "tilki şu an uyuyor.")
@@ -98,6 +103,41 @@ namespace KickForgeDesktop.Pages
             }
 
             DrawSpark();
+        }
+
+        /// <summary>izleyici sayısı zıplamasın: eski değerden yenisine sayarak geçsin.</summary>
+        private void CountViewers(int value)
+        {
+            _count?.Stop();
+
+            var from = _shownViewers < 0 ? 0 : _shownViewers;
+            _shownViewers = value;
+
+            if (!IsLoaded || value == (int)from)
+            {
+                ViewerText.Text = value.ToString("N0");
+                return;
+            }
+
+            var watch = Stopwatch.StartNew();
+            var timer = new DispatcherTimer(DispatcherPriority.Render)
+            {
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+
+            timer.Tick += (_, _) =>
+            {
+                var t = Math.Min(1, watch.Elapsed.TotalMilliseconds / 420.0);
+                var eased = 1 - Math.Pow(1 - t, 3);
+                ViewerText.Text = ((int)Math.Round(from + (value - from) * eased)).ToString("N0");
+
+                if (t < 1) return;
+                ViewerText.Text = value.ToString("N0");
+                timer.Stop();
+            };
+
+            _count = timer;
+            timer.Start();
         }
 
         private void DrawSpark()
