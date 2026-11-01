@@ -97,12 +97,12 @@ namespace KickForgeDesktop.Services
         }
 
         /// <summary>tarayıcıyı açar, kullanıcı girişi bitirince token'ı alır.</summary>
-        public async Task<bool> LoginAsync(string apiBase, CancellationToken token)
+        public async Task<bool> LoginAsync(string apiBase, CancellationToken token, bool openBrowser = true, string? forcedState = null)
         {
             var port = FindFreePort();
             if (port == 0) throw new InvalidOperationException("yerel port bulunamadı");
 
-            var state = Guid.NewGuid().ToString("N");
+            var state = forcedState ?? Guid.NewGuid().ToString("N");
             var listener = new TcpListener(IPAddress.Loopback, port);
             listener.Start();
 
@@ -110,7 +110,7 @@ namespace KickForgeDesktop.Services
             {
                 var url = apiBase.TrimEnd('/') + "/api/auth?desktop=" + port + "&state=" + state;
                 Log.Write("kick girişi başlatıldı (port " + port + ")");
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                if (openBrowser) Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
                 timeout.CancelAfter(TimeSpan.FromMinutes(3));

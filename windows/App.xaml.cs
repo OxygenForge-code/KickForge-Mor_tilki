@@ -53,7 +53,7 @@ namespace KickForgeDesktop
             {
                 if (string.Equals(arg, "--diag", StringComparison.OrdinalIgnoreCase))
                 {
-                    RunDiagnostics();
+                    RunDiagnostics(e.Args);
                     return;
                 }
             }
@@ -63,11 +63,30 @@ namespace KickForgeDesktop
             window.Show();
         }
 
-        private async void RunDiagnostics()
+        private async void RunDiagnostics(string[] args)
         {
             try
             {
                 var settings = SettingsStore.Load();
+
+                // yerel giriş köprüsünü (tarayıcı açmadan) dinlemeye al
+                if (args.Contains("--listen"))
+                {
+                    try
+                    {
+                        using var listenCts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(70));
+                        var bridge = await new Services.KickAuthService()
+                            .LoginAsync(settings.ApiBase, listenCts.Token, openBrowser: false, forcedState: "teststate");
+                        Log.Write("tanılama: yerel köprü " + (bridge ? "token aldı" : "tamamlanmadı"));
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Write("tanılama: yerel köprü hata · " + ex.Message);
+                    }
+                    Shutdown();
+                    return;
+                }
+
                 var chat = new Services.ChatService();
                 using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(30));
 

@@ -40,7 +40,8 @@ export default async function handler(req, res) {
     }
 
     if (desktopPort) {
-      // token'lar fragment içinde gider: sunucuya geri dönmez, günlüğe düşmez
+      // not: fragment (#) yerel sunucuya hiç gitmez, o yüzden sorgu kullanılıyor;
+      // uygulamanın döndüğü sayfa adres çubuğunu hemen temizliyor.
       const payload = new URLSearchParams({
         access_token: data.access_token,
         refresh_token: data.refresh_token || '',
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
         'kickforge_desktop=; Path=/; HttpOnly; Secure; Max-Age=0',
         'pkce_verifier=; Path=/; HttpOnly; Secure; Max-Age=0'
       ]);
-      return res.redirect(`http://127.0.0.1:${desktopPort}/auth#${payload.toString()}`);
+      return res.redirect(`http://127.0.0.1:${desktopPort}/auth?${payload.toString()}`);
     }
 
     res.setHeader('Set-Cookie', [
