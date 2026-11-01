@@ -1,10 +1,8 @@
-# bağımlılıklar
+# bagimliliklar
 node_modules/
 
-# masaüstü paketinin ürettikleri (dist 268 MB, zip 110 MB)
-desktop/dist/
-desktop/.electron-cache/
-desktop/index.html
+# yerel .NET SDK (sadece bu makinede derlemek icin)
+.dotnet/
 
-# günlükler
+# gunlukler
 *.log

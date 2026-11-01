@@ -1,15 +1,14 @@
 name: windows exe
 
-# Masaüstü paketi Windows runner'da derleniyor ve tek dosyalık .exe
-# bir GitHub Release'e yükleniyor. Localde makensis yoksa bu adım yok;
-# burada hem makensis hem Windows olduğu için çıktı dist/KickForge.exe.
+# Masaüstü uygulaması artık electron değil: C# / .NET 8 / WPF.
+# windows-latest runner'da tek dosya (self-contained) olarak derlenip
+# GitHub Release'e yükleniyor. Visual Studio gerekmiyor.
 
 on:
   push:
     branches: [main]
     paths:
-      - 'desktop/**'
-      - 'index.html'
+      - 'windows/**'
       - '.github/workflows/windows-exe.yml'
   workflow_dispatch:
 
@@ -17,82 +16,37 @@ permissions:
   contents: write
 
 jobs:
-  paketle:
+  derle:
     runs-on: windows-latest
-    timeout-minutes: 60
-    env:
-      # electron zip'ini build.js kendisi indiriyor; npm ikinci kez indirmesin
-      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
-      # defender 180 MB'lik exe'yi derleme sirasinda tarayip dosyayi kilitliyor
-      - name: defender istisnasi
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          Add-MpPreference -ExclusionPath $env:GITHUB_WORKSPACE -ErrorAction Stop
-          Write-Host "istisna: $env:GITHUB_WORKSPACE"
-
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-dotnet@v4
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: desktop/package-lock.json
+          dotnet-version: '8.0.x'
 
-      # windows runner'da nsis zaten kurulu geliyor; choco'ya gerek yok.
-      # yoksa da kurmayı deniyor ama asıl yol makensis'i bulup sürümünü basmak.
-      - name: nsis
+      - name: derle
         shell: pwsh
         run: |
-          $adaylar = @(
-            (Get-Command makensis -ErrorAction SilentlyContinue).Source,
-            'C:\Program Files (x86)\NSIS\makensis.exe',
-            'C:\Program Files\NSIS\makensis.exe'
-          ) | Where-Object { $_ -and (Test-Path $_) }
+          dotnet publish windows/KickForgeDesktop.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=none `
+            -o out
+          if ($LASTEXITCODE -ne 0) { throw "dotnet publish düştü ($LASTEXITCODE)" }
 
-          if (@($adaylar).Count -eq 0) {
-            "makensis yok, choco deneniyor" | Add-Content $env:GITHUB_STEP_SUMMARY
-            choco install nsis -y --no-progress *>&1 | Tee-Object -FilePath nsis.log
-            Get-Content nsis.log -Tail 30 | Add-Content $env:GITHUB_STEP_SUMMARY
-            $adaylar = @('C:\Program Files (x86)\NSIS\makensis.exe') | Where-Object { Test-Path $_ }
-          }
-
-          if (@($adaylar).Count -eq 0) { throw 'makensis bulunamadı' }
-          $makensis = @($adaylar)[0]
-          & $makensis /VERSION
-          if ($LASTEXITCODE -ne 0) { throw "makensis çalışmadı ($LASTEXITCODE): $makensis" }
-          "makensis: $makensis" | Add-Content $env:GITHUB_STEP_SUMMARY
-          "makensis: $makensis"
-
-      - name: bagimliliklar
-        shell: pwsh
-        working-directory: desktop
-        run: |
-          npm ci --ignore-scripts --no-audit --no-fund
-          if ($LASTEXITCODE -ne 0) { throw "npm ci düştü ($LASTEXITCODE)" }
-
-      - name: paketle
-        shell: pwsh
-        working-directory: desktop
-        run: |
-          node build.js *>&1 | Tee-Object -FilePath build.log
-          $code = $LASTEXITCODE
-          if (Test-Path build.log) {
-            Get-Content build.log -Tail 40 | Add-Content $env:GITHUB_STEP_SUMMARY
-          }
-          if ($code -ne 0) {
-            "``````" | Add-Content $env:GITHUB_STEP_SUMMARY
-            Get-Content build.log -Tail 8 -ErrorAction SilentlyContinue |
-              ForEach-Object { "::error::" + ($_ -replace '%','%25') }
-            throw "build.js düştü ($code)"
-          }
-
-      - name: tek dosya çıktı var mı
+      - name: çıktıyı doğrula
         shell: pwsh
         run: |
-          if (-not (Test-Path desktop/dist/KickForge.exe)) { throw 'dist/KickForge.exe üretilmedi' }
-          Get-Item desktop/dist/KickForge.exe | Format-List Name, Length, LastWriteTime
+          if (-not (Test-Path out/KickForge.exe)) { throw 'out/KickForge.exe üretilmedi' }
+          $exe = Get-Item out/KickForge.exe
+          "boyut: {0:N0} bayt" -f $exe.Length | Add-Content $env:GITHUB_STEP_SUMMARY
+          $bytes = [System.IO.File]::ReadAllBytes($exe.FullName)[0..1]
+          if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw 'çıktı bir Windows exe değil' }
+          Get-Item out/KickForge.exe | Format-List Name, Length, LastWriteTime
 
       - name: release'e yükle
         shell: pwsh
@@ -101,17 +55,19 @@ jobs:
         run: |
           $tag = "windows-r$env:GITHUB_RUN_NUMBER"
           $notes = @(
-            "masaüstü (.exe) · GitHub Actions windows runner'ında derlendi",
+            "native windows uygulaması · C# / .NET 8 / WPF",
             "",
-            "indir, çift tıkla: ilk açılışta `$LOCALAPPDATA\KickForge'e kuruyor,",
-            "sonraki açılışlarda doğrudan çalışıyor, yeni sürüm indiğinde kendini",
-            "güncelliyor. Kaynak: desktop/installer.nsi + desktop/build.js",
+            "elektron yok, gömülü tarayıcı yok: pencereyi windows'un kendi",
+            "çizim katmanı çiziyor. tek dosya, kurulum gerektirmez:",
+            "indir, çift tıkla, çalışır (kendi .NET çalışma zamanını taşır).",
             "",
-            "sayfa: https://kickforge-mor-tilki.vercel.app/"
+            "ayarlar ve geçmiş: %APPDATA%\KickForge\native",
+            "",
+            "kaynak: windows/ · site: https://kickforge-mor-tilki.vercel.app/"
           ) -join "`n"
-          gh release create $tag "desktop/dist/KickForge.exe" `
+          gh release create $tag "out/KickForge.exe" `
             --repo $env:GITHUB_REPOSITORY `
-            --title "KickForge masaüstü (.exe) · r$env:GITHUB_RUN_NUMBER" `
+            --title "KickForge masaüstü · r$env:GITHUB_RUN_NUMBER" `
             --notes $notes `
             --latest
           if ($LASTEXITCODE -ne 0) { throw "release oluşturulamadı ($LASTEXITCODE)" }

@@ -1,0 +1,80 @@
+<UserControl x:Class="KickForgeDesktop.Pages.AboutPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Style="{StaticResource SlimScrollHost}" VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+        <StackPanel>
+
+            <StackPanel Margin="2,0,0,12">
+                <TextBlock Text="hakkında" Style="{StaticResource H1}" />
+                <TextBlock Text="bu bir tarayıcı penceresi değil" Style="{StaticResource Caption}" Margin="0,4,0,0" />
+            </StackPanel>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="kickforge · native" Style="{StaticResource H2}" />
+                    <TextBlock x:Name="VersionLine" Text="sürüm 2.0.0" Style="{StaticResource Mono}" FontSize="11.5"
+                               Margin="0,6,0,0" Foreground="{DynamicResource TextDim}" />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,12,0,0"
+                               Text="C# ve WPF ile yazılmış gerçek bir Windows uygulaması. İçinde gömülü tarayıcı, electron, chromium veya web görünümü yok: pencereyi Windows'un kendi çizim katmanı çiziyor, veriyi kendisi indiriyor, grafiği kendisi hesaplıyor." />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,10,0,0"
+                               Text="Siteden kasıtlı olarak farklı: burada sohbet paneli ve yayın oynatıcısı yok. Masaüstünün işi arka planda durmak — yayın başladığında haber vermek, izleyici eğrisini saatlerce biriktirmek, tepside yaşamak." />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="sadece masaüstünde olanlar" Style="{StaticResource H2}" />
+
+                    <TextBlock Style="{StaticResource Body}" Margin="0,12,0,0" Text="• yayın başladı / bitti bildirimi, kendi uyarı sesleriyle" />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0" Text="• izleyici eğrisi: uygulama kapansa da örnekler durur" />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0" Text="• ses çıkışı (kulaklık) seçimi + 528 Hz test tonu" />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0" Text="• kapatınca tepside kalma, tepside canlı durum" />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0" Text="• her zaman üstte, saydamlık, dört tema" />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0" Text="• sistem geneli kısayollar (uygulama arkadayken de)" />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0" Text="• windows ile birlikte açılma" />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0" Text="• sessiz saatler, bildirim başına ses seçimi" />
+                    <TextBlock Style="{StaticResource Body}" Margin="0,7,0,0" Text="• site düşerse kick.com'dan doğrudan okuma" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="kısayollar" Style="{StaticResource H2}" />
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Ctrl+Shift+K" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Accent}" />
+                        <TextBlock Grid.Column="1" Text="pencereyi öne getir" Style="{StaticResource Body}" Margin="0,-2,0,8" />
+                        <TextBlock Grid.Row="1" Text="Ctrl+Shift+T" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Accent}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="her zaman üstte aç/kapa" Style="{StaticResource Body}" Margin="0,-2,0,8" />
+                        <TextBlock Grid.Row="2" Text="Ctrl+Shift+M" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Accent}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="bildirim seslerini kapat" Style="{StaticResource Body}" Margin="0,-2,0,8" />
+                        <TextBlock Grid.Row="3" Text="F5" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Accent}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="veriyi hemen yenile" Style="{StaticResource Body}" Margin="0,-2,0,0" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="bağlantılar" Style="{StaticResource H2}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <Button Content="site" Style="{StaticResource Ghost}" Click="Site_Click" />
+                        <Button Content="github" Style="{StaticResource Ghost}" Margin="8,0,0,0" Click="Github_Click" />
+                        <Button Content="son .exe" Style="{StaticResource Primary}" Margin="8,0,0,0" Click="Exe_Click" />
+                    </StackPanel>
+                    <TextBlock x:Name="DataLine" Text="" Style="{StaticResource Caption}" Margin="0,14,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

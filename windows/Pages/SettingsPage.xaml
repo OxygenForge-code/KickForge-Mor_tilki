@@ -1,0 +1,333 @@
+<UserControl x:Class="KickForgeDesktop.Pages.SettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Style="{StaticResource SlimScrollHost}" VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+        <StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="2,0,0,12">
+                <TextBlock Text="ayarlar" Style="{StaticResource H1}" />
+                <TextBlock Text=" · hepsi bu bilgisayarda, hiçbiri sunucuya gitmiyor" Style="{StaticResource Caption}"
+                           VerticalAlignment="Bottom" Margin="10,0,0,4" />
+            </StackPanel>
+
+            <!-- görünüm -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="görünüm" Style="{StaticResource H2}" />
+                    <TextBlock Text="tema" Style="{StaticResource Caption}" Margin="0,14,0,6" />
+                    <WrapPanel>
+                        <RadioButton x:Name="ThemeRoom" Style="{StaticResource Segment}" Content="kontrol odası" GroupName="theme" Checked="Theme_Checked" />
+                        <RadioButton x:Name="ThemeMidnight" Style="{StaticResource Segment}" Content="gece" GroupName="theme" Checked="Theme_Checked" />
+                        <RadioButton x:Name="ThemeSakura" Style="{StaticResource Segment}" Content="sakura" GroupName="theme" Checked="Theme_Checked" />
+                        <RadioButton x:Name="ThemeMono" Style="{StaticResource Segment}" Content="mono" GroupName="theme" Checked="Theme_Checked" />
+                    </WrapPanel>
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="pencere saydamlığı" Style="{StaticResource Body}" />
+                            <TextBlock Text="%100 = tamamen opak" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Width="240">
+                            <Slider Style="{StaticResource SlimSlider}" Minimum="40" Maximum="100" Width="180"
+                                    Value="{Binding Opacity, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding Opacity, StringFormat={}{0:0}%}" Style="{StaticResource Mono}"
+                                       VerticalAlignment="Center" Margin="12,0,0,0" Width="44" TextAlignment="Right" />
+                        </StackPanel>
+                    </Grid>
+
+                    <CheckBox Content="kompakt görünüm (alt kartları gizle)" Style="{StaticResource Switch}" Margin="0,14,0,0"
+                              IsChecked="{Binding CompactMode, Mode=TwoWay}" />
+                </StackPanel>
+            </Border>
+
+            <!-- pencere -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="pencere" Style="{StaticResource H2}" />
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="her zaman üstte" Style="{StaticResource Body}" />
+                            <TextBlock Text="pencere diğer uygulamaların önünde kalsın" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <CheckBox Grid.Column="1" Style="{StaticResource Switch}" VerticalAlignment="Center"
+                                  IsChecked="{Binding AlwaysOnTop, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="kapatınca tepside kal" Style="{StaticResource Body}" />
+                            <TextBlock Text="çarpı uygulamayı kapatmaz, simgeye indirir" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <CheckBox Grid.Column="1" Style="{StaticResource Switch}" VerticalAlignment="Center"
+                                  IsChecked="{Binding MinimizeToTray, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="açılışta küçük başla" Style="{StaticResource Body}" />
+                            <TextBlock Text="tepside başlar, istediğinde açarsın" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <CheckBox Grid.Column="1" Style="{StaticResource Switch}" VerticalAlignment="Center"
+                                  IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="windows ile birlikte aç" Style="{StaticResource Body}" />
+                            <TextBlock x:Name="AutoStartHint" Text="kayıt defterine yazılır (yönetici gerekmez)" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <CheckBox x:Name="AutoStartToggle" Grid.Column="1" Style="{StaticResource Switch}" VerticalAlignment="Center"
+                                  IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="pencere konumunu hatırla" Style="{StaticResource Body}" />
+                            <TextBlock Text="boyut ve yer bir sonraki açılışta geri gelir" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <CheckBox Grid.Column="1" Style="{StaticResource Switch}" VerticalAlignment="Center"
+                                  IsChecked="{Binding RememberBounds, Mode=TwoWay}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- veri -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="veri ve bağlantı" Style="{StaticResource H2}" />
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="yenileme aralığı" Style="{StaticResource Body}" />
+                            <TextBlock Text="çok sık sorgu = daha çok engellenme" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Slider Style="{StaticResource SlimSlider}" Minimum="5" Maximum="300" Width="180"
+                                    Value="{Binding PollSeconds, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding PollSeconds, StringFormat={}{0} sn}" Style="{StaticResource Mono}"
+                                       VerticalAlignment="Center" Margin="12,0,0,0" Width="56" TextAlignment="Right" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="geçmiş derinliği" Style="{StaticResource Body}" />
+                            <TextBlock Text="eğride tutulacak dakika" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Slider Style="{StaticResource SlimSlider}" Minimum="30" Maximum="720" Width="180"
+                                    Value="{Binding HistoryMinutes, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding HistoryMinutes, StringFormat={}{0} dk}" Style="{StaticResource Mono}"
+                                       VerticalAlignment="Center" Margin="12,0,0,0" Width="56" TextAlignment="Right" />
+                        </StackPanel>
+                    </Grid>
+
+                    <CheckBox Content="site düşerse kick.com'dan doğrudan oku" Style="{StaticResource Switch}" Margin="0,16,0,0"
+                              IsChecked="{Binding AutoRetry, Mode=TwoWay}" />
+                    <CheckBox Content="izleyici eğrisini göster" Style="{StaticResource Switch}" Margin="0,12,0,0"
+                              IsChecked="{Binding ShowSparkline, Mode=TwoWay}" />
+
+                    <TextBlock Text="site adresi" Style="{StaticResource Caption}" Margin="0,16,0,6" />
+                    <TextBox Style="{StaticResource Field}" Text="{Binding ApiBase, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                    <TextBlock Text="kanal adı" Style="{StaticResource Caption}" Margin="0,12,0,6" />
+                    <TextBox Style="{StaticResource Field}" Text="{Binding ChannelSlug, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <Button Content="bağlantıyı dene" Style="{StaticResource Primary}" Click="TestConnection_Click" />
+                        <TextBlock x:Name="TestResult" Text="" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                                   Margin="12,0,0,0" TextWrapping="Wrap" MaxWidth="420" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- bildirimler -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="bildirimler" Style="{StaticResource H2}" />
+
+                    <CheckBox Content="yayın başladığında haber ver" Style="{StaticResource Switch}" Margin="0,16,0,0"
+                              IsChecked="{Binding NotifyLive, Mode=TwoWay}" />
+                    <CheckBox Content="yeni takipçide haber ver" Style="{StaticResource Switch}" Margin="0,12,0,0"
+                              IsChecked="{Binding NotifyFollower, Mode=TwoWay}" />
+                    <CheckBox Content="izleyici sıçramasında haber ver" Style="{StaticResource Switch}" Margin="0,12,0,0"
+                              IsChecked="{Binding NotifyViewerSpike, Mode=TwoWay}" />
+                    <CheckBox Content="bağlantı sorununda uyar" Style="{StaticResource Switch}" Margin="0,12,0,0"
+                              IsChecked="{Binding NotifyRecover, Mode=TwoWay}" />
+
+                    <TextBlock Text="bildirim sesi" Style="{StaticResource Caption}" Margin="0,18,0,6" />
+                    <WrapPanel>
+                        <RadioButton x:Name="SoundNone" Style="{StaticResource Segment}" Content="sessiz" GroupName="sound" Checked="Sound_Checked" />
+                        <RadioButton x:Name="SoundPulse" Style="{StaticResource Segment}" Content="pulse" GroupName="sound" Checked="Sound_Checked" />
+                        <RadioButton x:Name="SoundBlip" Style="{StaticResource Segment}" Content="blip" GroupName="sound" Checked="Sound_Checked" />
+                        <RadioButton x:Name="SoundChime" Style="{StaticResource Segment}" Content="chime" GroupName="sound" Checked="Sound_Checked" />
+                    </WrapPanel>
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="ses seviyesi" Style="{StaticResource Body}" />
+                            <TextBlock Text="uygulamanın kendi uyarı sesi" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Slider Style="{StaticResource SlimSlider}" Minimum="0" Maximum="100" Width="180"
+                                    Value="{Binding SoundVolume, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding SoundVolume, StringFormat={}{0}%}" Style="{StaticResource Mono}"
+                                       VerticalAlignment="Center" Margin="12,0,0,0" Width="56" TextAlignment="Right" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Content="sesi dinle" Style="{StaticResource Ghost}" HorizontalAlignment="Left" Margin="0,14,0,0"
+                            Click="PreviewSound_Click" />
+
+                    <Border Height="1" Background="{DynamicResource Line}" Margin="0,18,0,16" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="sessiz saatler" Style="{StaticResource Body}" />
+                            <TextBlock Text="bu aralıkta bildirim sesi çalmaz" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <CheckBox Grid.Column="1" Style="{StaticResource Switch}" VerticalAlignment="Center"
+                                  IsChecked="{Binding QuietHours, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="başlangıç" Style="{StaticResource Caption}" />
+                            <Slider Style="{StaticResource SlimSlider}" Minimum="0" Maximum="23" Width="180"
+                                    Value="{Binding QuietStart, Mode=TwoWay}" HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding QuietStart, StringFormat={}{0:00}:00}" Style="{StaticResource Mono}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="bitiş" Style="{StaticResource Caption}" />
+                            <Slider Style="{StaticResource SlimSlider}" Minimum="0" Maximum="23" Width="180"
+                                    Value="{Binding QuietEnd, Mode=TwoWay}" HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding QuietEnd, StringFormat={}{0:00}:00}" Style="{StaticResource Mono}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ses cihazı -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="ses çıkışı" Style="{StaticResource H2}" />
+                    <TextBlock Text="uyarı sesleri bu cihazdan çıkar — kulaklık takılıysa buradan seç"
+                               Style="{StaticResource Caption}" Margin="0,6,0,10" />
+                    <ListBox x:Name="DeviceList" Style="{StaticResource PlainList}" Height="132"
+                             SelectionChanged="DeviceList_SelectionChanged" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="listeyi tazele" Style="{StaticResource Ghost}" Click="RefreshDevices_Click" />
+                        <Button Content="seçili cihazda dene" Style="{StaticResource Primary}" Margin="8,0,0,0"
+                                Click="TestDevice_Click" />
+                    </StackPanel>
+                    <TextBlock x:Name="DeviceHint" Text="" Style="{StaticResource Caption}" Margin="0,10,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- kısayollar -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="sistem kısayolları" Style="{StaticResource H2}" />
+                    <TextBlock Text="uygulama arkada olsa da çalışır · biçim: Ctrl+Shift+K" Style="{StaticResource Caption}"
+                               Margin="0,6,0,12" />
+
+                    <CheckBox Content="kısayollar açık" Style="{StaticResource Switch}" Margin="0,0,0,12"
+                              IsChecked="{Binding HotkeysEnabled, Mode=TwoWay}" />
+
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="180" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="pencereyi göster" Style="{StaticResource Body}" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Style="{StaticResource Field}" Text="{Binding HotkeyShow, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                    </Grid>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="180" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="her zaman üstte" Style="{StaticResource Body}" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Style="{StaticResource Field}" Text="{Binding HotkeyTop, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                    </Grid>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="180" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="bildirim sesini kapat" Style="{StaticResource Body}" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Style="{StaticResource Field}" Text="{Binding HotkeyMute, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="kısayolları uygula" Style="{StaticResource Primary}" Click="ApplyHotkeys_Click" />
+                        <TextBlock x:Name="HotkeyResult" Text="" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                                   Margin="12,0,0,0" TextWrapping="Wrap" MaxWidth="420" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- gelişmiş -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="gelişmiş" Style="{StaticResource H2}" />
+                    <CheckBox Content="günlük dosyası tut" Style="{StaticResource Switch}" Margin="0,14,0,0"
+                              IsChecked="{Binding LogToFile, Mode=TwoWay}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <Button Content="veri klasörü" Style="{StaticResource Ghost}" Click="OpenData_Click" />
+                        <Button Content="günlüğü aç" Style="{StaticResource Ghost}" Margin="8,0,0,0" Click="OpenLog_Click" />
+                        <Button Content="ayarları dışa aktar" Style="{StaticResource Ghost}" Margin="8,0,0,0" Click="Export_Click" />
+                        <Button Content="varsayılana dön" Style="{StaticResource Ghost}" Margin="8,0,0,0" Click="Reset_Click" />
+                    </StackPanel>
+                    <TextBlock x:Name="DataPath" Text="" Style="{StaticResource Caption}" Margin="0,12,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

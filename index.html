@@ -1608,13 +1608,17 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
           <dd>
             <strong>Windows için tek dosya .exe</strong> de var:
             <a href="https://github.com/OxygenForge-code/KickForge-Mor_tilki/releases/latest/download/KickForge.exe">KickForge.exe</a>
-            indir, çift tıkla. İlk açılışta kendini <code>%LOCALAPPDATA%\KickForge</code>
-            altına kuruyor, sonraki açılışlarda doğrudan açılıyor; yeni sürüm
-            indiğinde kendini yeniliyor. Aynı ekran, tek pencere — üstüne
-            sitede olmayan şeyler: menüden ses çıkışı (kulaklık) seçimi ve test
-            sesi, mikrofon/kamera izin durumu, her zaman üstte, kapatınca simgede
-            kalma. exe'yi GitHub Actions derliyor, kaynaktan
-            <code>npm run build:win</code> ile de çıkıyor.
+            indir, çift tıkla — kurulum yok, kendi .NET çalışma zamanını taşıyor,
+            ayarlarını <code>%APPDATA%\KickForge\native</code> altında tutuyor.
+            <strong>Electron değil:</strong> C# + WPF ile yazılmış native bir
+            uygulama; içinde gömülü tarayıcı yok, siteyi yüklemiyor.
+            Bilerek aynı ekran değil — masaüstünün işi arkada durmak: yayın
+            başladı/bitti bildirimi ve kendi uyarı sesleri, saatlerce biriken
+            izleyici eğrisi, ses çıkışı (kulaklık) seçimi + 528 Hz test tonu,
+            her zaman üstte, kapatınca tepside kalma, sistem kısayolları,
+            windows ile birlikte açılma, sessiz saatler, dört tema.
+            Derleme GitHub Actions'ta, kaynaktan <code>dotnet publish</code>
+            ile de çıkıyor.
           </dd>
         </div>
         <div class="deflist__row">
@@ -1682,7 +1686,7 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
   <span class="foot__sep">·</span>
   <a href="https://kick.com/mor-tilki" target="_blank" rel="noopener noreferrer">kick.com/mor-tilki</a>
   <span class="foot__sep">·</span>
-  <a href="https://github.com/OxygenForge-code/KickForge-Mor_tilki/releases/latest/download/KickForge.exe">windows masaüstü (.exe)</a>
+  <a href="https://github.com/OxygenForge-code/KickForge-Mor_tilki/releases/latest/download/KickForge.exe">windows masaüstü (.exe, native)</a>
   <span class="foot__sep">·</span>
   <a href="https://github.com/OxygenForge-code/KickForge-Mor_tilki" target="_blank" rel="noopener noreferrer">github</a>
   <span class="foot__sep">·</span>
