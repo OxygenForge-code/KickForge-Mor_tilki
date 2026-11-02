@@ -80,6 +80,36 @@ namespace KickForgeDesktop
 
             if (e.Args.Contains("--studio")) window.ShowStudio();
 
+            // tanılama: gerçek güncelleme denetimini şimdi çalıştır (--updateson)
+            if (e.Args.Contains("--updateson"))
+            {
+                window.Dispatcher.InvokeAsync(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(1500);
+                    await window.ProbeForUpdateAsync(force: true);
+                    await System.Threading.Tasks.Task.Delay(3500);
+                    window.Close();
+                    Shutdown();
+                });
+            }
+
+            // tanılama: güncelleme balonunu doğrudan çiz ve açık kalsın (--toasttest)
+            if (e.Args.Contains("--toasttest"))
+            {
+                window.Dispatcher.InvokeAsync(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(1500);
+                    window.ShowUpdateToast(new KickForgeDesktop.Services.LatestRelease
+                    {
+                        Version = "9.9.9",
+                        Build = "tanılama",
+                        Url = "https://github.com/OxygenForge-code/KickForge-Mor_tilki/releases/latest/download/KickForge.exe",
+                        Size = 66671226,
+                        Title = "tanılama balonu"
+                    });
+                });
+            }
+
             // ekranda gerçekten ne göründüğünü ölç (kickforge.exe --check)
             if (e.Args.Contains("--check"))
             {

@@ -15,7 +15,7 @@
 
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Border x:Name="Tally" Style="{StaticResource Chip}" Background="{DynamicResource Surface2}"
+                            <Border x:Name="Tally" Style="{StaticResource Chip}" Background="{DynamicResource GlassFill2}"
                                     BorderBrush="{DynamicResource Line}">
                                 <StackPanel Orientation="Horizontal">
                                     <Ellipse x:Name="TallyDot" Width="7" Height="7" Fill="{DynamicResource TextDim}"
@@ -95,7 +95,7 @@
             </Border>
 
             <!-- eski veri uyarısı -->
-            <Border x:Name="StaleBar" Style="{StaticResource Card}" Background="{DynamicResource Surface2}"
+            <Border x:Name="StaleBar" Style="{StaticResource Card}" Background="{DynamicResource GlassFill2}"
                     Padding="16" Margin="0,0,0,12" Visibility="Collapsed">
                 <Grid>
                     <Grid.ColumnDefinitions>

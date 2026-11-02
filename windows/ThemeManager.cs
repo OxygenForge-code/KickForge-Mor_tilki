@@ -107,6 +107,76 @@ namespace KickForgeDesktop
             Set("Accent", palette.Accent);
             Set("Accent2", palette.Accent2);
             Set("AccentInk", palette.AccentInk);
+
+            // ---- liquid glass yuzeyler -----------------------------------
+            static Color Hex(string hex) => (Color)ColorConverter.ConvertFromString(hex);
+            static Color Alpha(Color c, byte a) => Color.FromArgb(a, c.R, c.G, c.B);
+
+            void SetBrush(string key, System.Windows.Media.Brush brush)
+            {
+                if (brush.CanFreeze) brush.Freeze();
+                resources[key] = brush;
+            }
+
+            LinearGradientBrush Glass(string topHex, byte topAlpha, string midHex, byte midAlpha,
+                                      string endHex, byte endAlpha)
+            {
+                var brush = new LinearGradientBrush
+                {
+                    StartPoint = new Point(0, 0),
+                    EndPoint = new Point(0.4, 1)
+                };
+                brush.GradientStops.Add(new GradientStop(Alpha(Hex(topHex), topAlpha), 0));
+                brush.GradientStops.Add(new GradientStop(Alpha(Hex(midHex), midAlpha), 0.55));
+                brush.GradientStops.Add(new GradientStop(Alpha(Hex(endHex), endAlpha), 1));
+                return brush;
+            }
+
+            // kart yuzeyi
+            SetBrush("GlassFill", Glass(palette.Surface2, 0xEA, palette.Surface, 0xDC, palette.Surface2, 0xD0));
+            // rozet / ikincil yuzey
+            SetBrush("GlassFill2", Glass(palette.Surface3, 0xE8, palette.Surface2, 0xD6, palette.Surface3, 0xCC));
+            // daha koyu cam (yazı alanları, listeler)
+            SetBrush("GlassFill3", Glass(palette.Surface, 0xF2, palette.Surface2, 0xE2, palette.Surface, 0xD8));
+
+            // kenar isigi: ust parlak, alt yansima
+            var edge = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1) };
+            edge.GradientStops.Add(new GradientStop(Color.FromArgb(0x42, 255, 255, 255), 0));
+            edge.GradientStops.Add(new GradientStop(Alpha(Hex(palette.Line), 0xB8), 0.5));
+            edge.GradientStops.Add(new GradientStop(Color.FromArgb(0x20, 255, 255, 255), 1));
+            SetBrush("GlassEdge", edge);
+
+            SetBrush("GlassHover", new SolidColorBrush(Color.FromArgb(0x1C, 255, 255, 255)));
+
+            // cam arkasi ortam isigi (tema renginden)
+            System.Windows.Media.Brush Ambient(string hex, byte alpha)
+            {
+                var c = Alpha(Hex(hex), alpha);
+                var brush = new RadialGradientBrush
+                {
+                    MappingMode = BrushMappingMode.RelativeToBoundingBox,
+                    Center = new Point(0.5, 0.5),
+                    GradientOrigin = new Point(0.5, 0.5),
+                    RadiusX = 0.5,
+                    RadiusY = 0.5
+                };
+                brush.GradientStops.Add(new GradientStop(c, 0));
+                brush.GradientStops.Add(new GradientStop(Color.FromArgb((byte)(alpha / 2), c.R, c.G, c.B), 0.6));
+                brush.GradientStops.Add(new GradientStop(Color.FromArgb(0, c.R, c.G, c.B), 1));
+                return brush;
+            }
+
+            SetBrush("AmbientA", Ambient(palette.Accent, 0x2A));
+            SetBrush("AmbientB", Ambient(palette.Accent2, 0x22));
+
+            // modern ana düğme: accent'ten koyu tonuna akan gradyan
+            var primaryFill = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0.8, 1) };
+            primaryFill.GradientStops.Add(new GradientStop(Alpha(Hex(palette.Accent), 0xFF), 0));
+            primaryFill.GradientStops.Add(new GradientStop(Alpha(Hex(palette.Accent), 0xC2), 1));
+            SetBrush("PrimaryFill", primaryFill);
+
+            // ince kaydırma çubuğu burnu (metin renginin duran %22'si)
+            SetBrush("ScrollThumb", new SolidColorBrush(Alpha(Hex(palette.Text), 0x38)));
         }
     }
 }

@@ -90,7 +90,7 @@
 
     <!-- düğmeler -->
     <Style x:Key="Primary" TargetType="Button">
-        <Setter Property="Background" Value="{DynamicResource Accent}" />
+        <Setter Property="Background" Value="{DynamicResource PrimaryFill}" />
         <Setter Property="Foreground" Value="{DynamicResource AccentInk}" />
         <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
         <Setter Property="FontSize" Value="12.5" />
@@ -101,7 +101,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bg" CornerRadius="9" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                    <Border x:Name="Bg" CornerRadius="10" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
                             RenderTransformOrigin="0.5,0.5">
                         <Border.RenderTransform>
                             <ScaleTransform ScaleX="1" ScaleY="1" />
@@ -228,7 +229,7 @@
                 <ControlTemplate TargetType="CheckBox">
                     <StackPanel Orientation="Horizontal" Background="Transparent">
                         <Border x:Name="Track" Width="40" Height="22" CornerRadius="11"
-                                Background="{DynamicResource Surface3}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+                                Background="{DynamicResource GlassFill3}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
                             <Ellipse x:Name="Knob" Width="14" Height="14" Fill="{DynamicResource TextDim}"
                                      HorizontalAlignment="Left" Margin="3,0,0,0">
                                 <Ellipse.RenderTransform>
@@ -291,7 +292,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="Bg" CornerRadius="8" Padding="12,7"
-                            Background="{DynamicResource Surface2}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+                            Background="{DynamicResource GlassFill2}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
                         <TextBlock x:Name="Label" Text="{TemplateBinding Content}" FontFamily="{StaticResource UiFont}"
                                    FontSize="12" Foreground="{DynamicResource TextDim}" />
                     </Border>
@@ -379,6 +380,97 @@
     </Style>
 
     <!-- kaydırıcı -->
+    <!-- alt dock sekmesi: ikon ustte, etiket altta, aktif sekmede accent hap + isima -->
+    <Style x:Key="DockNav" TargetType="RadioButton">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="2,0" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid Background="Transparent">
+                        <!-- aktif sekmenin arkasindaki yumusak accent isimasi -->
+                        <Border x:Name="Glow" CornerRadius="16" Background="{DynamicResource Accent}" Opacity="0"
+                                Margin="4,8" IsHitTestVisible="False">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#C6F24E" BlurRadius="30" ShadowDepth="0" Opacity="0.75" />
+                            </Border.Effect>
+                        </Border>
+
+                        <Border x:Name="Pill" CornerRadius="16" Background="Transparent" Padding="15,6"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PillScale" ScaleX="1" ScaleY="1" />
+                            </Border.RenderTransform>
+                            <Grid>
+                                <!-- cam parlaksligi: yalnizca secili sekmede gorunur -->
+                                <Border x:Name="Gloss" CornerRadius="15" Opacity="0" IsHitTestVisible="False">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0.3,1">
+                                            <GradientStop Color="#59FFFFFF" Offset="0" />
+                                            <GradientStop Color="#1AFFFFFF" Offset="0.5" />
+                                            <GradientStop Color="#00FFFFFF" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <StackPanel>
+                                    <TextBlock x:Name="Glyph" Text="{TemplateBinding Tag}" FontFamily="{StaticResource IconFont}"
+                                               FontSize="15" HorizontalAlignment="Center"
+                                               Foreground="{TemplateBinding Foreground}" />
+                                    <TextBlock x:Name="Label" Text="{TemplateBinding Content}" Margin="0,3,0,0"
+                                               HorizontalAlignment="Center" FontFamily="{StaticResource UiFont}" FontSize="10.5"
+                                               Foreground="{TemplateBinding Foreground}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Pill" Property="Background" Value="#1FFFFFFF" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Text}" />
+                            <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Text}" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PillScale"
+                                                         Storyboard.TargetProperty="ScaleX" To="1.045" Duration="0:0:0.14" />
+                                        <DoubleAnimation Storyboard.TargetName="PillScale"
+                                                         Storyboard.TargetProperty="ScaleY" To="1.045" Duration="0:0:0.14" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PillScale"
+                                                         Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.16" />
+                                        <DoubleAnimation Storyboard.TargetName="PillScale"
+                                                         Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.16" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <!-- secili sekme: dolu accent hap, koyu murekkep, hafif isima -->
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Pill" Property="Background" Value="{DynamicResource Accent}" />
+                            <Setter TargetName="Glow" Property="Opacity" Value="0.32" />
+                            <Setter TargetName="Gloss" Property="Opacity" Value="1" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource AccentInk}" />
+                            <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource AccentInk}" />
+                            <Setter TargetName="Label" Property="FontWeight" Value="SemiBold" />
+                            <Setter TargetName="Pill" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="#C6F24E" BlurRadius="16" ShadowDepth="0" Opacity="0.45" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="SlimSlider" TargetType="Slider">
         <Setter Property="Height" Value="24" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -400,7 +492,7 @@
                                 <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Focusable="False">
                                     <RepeatButton.Template>
                                         <ControlTemplate TargetType="RepeatButton">
-                                            <Border Height="4" CornerRadius="2" Background="{DynamicResource Surface3}" VerticalAlignment="Center" />
+                                            <Border Height="4" CornerRadius="2" Background="{DynamicResource GlassFill3}" VerticalAlignment="Center" />
                                         </ControlTemplate>
                                     </RepeatButton.Template>
                                 </RepeatButton>
@@ -474,7 +566,7 @@
 
     <!-- ince kaydırma çubuğu -->
     <Style x:Key="SlimScroll" TargetType="ScrollBar">
-        <Setter Property="Width" Value="8" />
+        <Setter Property="Width" Value="6" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Template">
             <Setter.Value>
@@ -491,7 +583,7 @@
                                 <Thumb>
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border CornerRadius="4" Background="{DynamicResource Line}" Margin="1,0" />
+                                            <Border CornerRadius="3" Background="{DynamicResource ScrollThumb}" Margin="0,0,2,0" />
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>
@@ -504,7 +596,7 @@
         <Style.Triggers>
             <Trigger Property="Orientation" Value="Horizontal">
                 <Setter Property="Width" Value="Auto" />
-                <Setter Property="Height" Value="8" />
+                <Setter Property="Height" Value="6" />
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -514,6 +606,9 @@
             <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScroll}" />
         </Style.Resources>
     </Style>
+
+    <!-- her kaydırma çubuğu ince olsun (sohbet, sayfalar, listeler) -->
+    <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScroll}" />
 
     <!-- liste -->
     <Style x:Key="PlainList" TargetType="ListBox">
