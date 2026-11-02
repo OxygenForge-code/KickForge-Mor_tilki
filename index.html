@@ -1378,7 +1378,7 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
          rel="noopener">
         <svg class="ico ico--sm" aria-hidden="true"><use href="#i-download" /></svg>
         <span>indir</span>
-        <span class="btn__ext">.exe</span>
+        <span class="btn__ext" id="downloadVer">.exe</span>
       </a>
 
       <a class="btn btn--icon" href="https://kick.com/mor-tilki" target="_blank" rel="noopener noreferrer" title="Kick'te aç" aria-label="Kick'te aç">
@@ -1653,7 +1653,12 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
             tepside kalma, sistem kısayolları, windows ile birlikte açılma,
             sessiz saatler, dört tema.
             Derleme GitHub Actions'ta, kaynaktan <code>dotnet publish</code>
-            ile de çıkıyor.
+            ile de çıkıyor. <strong>2.2.0'la yüzeyler gerçek cam:</strong>
+            Windows'un kendi DWM acrylic katmanı pencerinin arkasındaki
+            masaüstünü bulanıklaştırıyor; camın içinden gerçek görüntü
+            geçiyor. Yeni bir sürüm çıktığında uygulama bunu kendiliğinden
+            görüyor — <em>şimdi kur</em> dersen güncel exe'yi indiriyor,
+            çıkışı bekleyip yeniden başlatıyor.
           </dd>
         </div>
         <div class="deflist__row">
@@ -1686,6 +1691,13 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
           </dd>
         </div>
         <div class="deflist__row">
+          <dt>sürüm</dt>
+          <dd>
+            <strong id="releaseInfo">siteden okunuyor…</strong>
+            <span class="status-dot" id="releaseDot" data-ok="false" style="margin-left:6px"></span>
+          </dd>
+        </div>
+        <div class="deflist__row">
           <dt>not</dt>
           <dd>
             Burası Kick'in resmî bir ürünü değil; hayran işi, kendi kendine
@@ -1706,6 +1718,11 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
             Material Symbols fontu atıldı, yerine sayfa içi SVG geldi. Oynatıcı
             artık yayın kapalıyken hiç yüklenmiyor, sohbet de gerçekten
             kaydırılabilir — önceden üstündeki görünmez katman tıklamaları yiyordu.
+          </p>
+          <p style="margin-top:8px">
+            2.2.0: yüzeyler gerçek sıvı cam (DWM acrylic), moderatör bir mesajı
+            sildiğinde uygulama listesi de senkronlanıyor, uygulama yeni sürümü
+            kendi fark edip kurabiliyor.
           </p>
         </div>
       </details>
@@ -1791,6 +1808,10 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
     authStatus: $('#authStatus'),
     authDot: $('#authDot'),
     lastCheck: $('#lastCheck'),
+    downloadBtn: $('#downloadBtn'),
+    downloadVer: $('#downloadVer'),
+    releaseInfo: $('#releaseInfo'),
+    releaseDot: $('#releaseDot'),
 
     toasts: $('#toasts')
   };
@@ -2265,6 +2286,39 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
     }
   });
 
+  /* windows sürümü: siteye hızlıca gerçek release bilgisi */
+  async function loadRelease() {
+    try {
+      const res = await fetch('/api/release', { headers: { accept: 'application/json' }, cache: 'no-store' });
+      if (!res.ok) throw new Error('release ' + res.status);
+      const data = await res.json();
+      if (!data || data.ok !== true || !data.version) throw new Error('bozuk yanıt');
+
+      const mb = typeof data.size === 'number' && data.size > 0
+        ? Math.round(data.size / 1048576) + ' mb'
+        : '';
+      const tarih = data.published ? new Date(data.published) : null;
+      const tarihMetni = tarih && !isNaN(tarih) && !REDUCED
+        ? tarih.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })
+        : '';
+
+      if (el.downloadVer) el.downloadVer.textContent = 'v' + data.version;
+      if (el.downloadBtn) {
+        el.downloadBtn.title = 'windows · v' + data.version + (data.build ? ' · ' + data.build : '') +
+          (mb ? ' · ' + mb : '') + ' · tek dosya, kurulum yok, çift tıkla çalışır';
+      }
+      if (el.releaseInfo) {
+        el.releaseInfo.textContent = 'v' + data.version + (data.build ? ' · ' + data.build : '') +
+          (mb ? ' · ' + mb : '') + (tarihMetni ? ' · ' + tarihMetni + ' itibarıyla' : '') +
+          ' · site sürümünü kendiliğinden izler';
+      }
+      if (el.releaseDot) el.releaseDot.dataset.ok = 'true';
+    } catch (err) {
+      console.warn('[KickForge] sürüm bilgisi alınemedi:', err && err.message ? err.message : err);
+      if (el.releaseInfo) el.releaseInfo.textContent = 'sürüm bilgisi okunamadı — indirme yukarıdaki düğmeden çalışır';
+    }
+  }
+
   /* açılış */
   function boot() {
     activateTab(tabFromHash(), { updateHash: false });
@@ -2287,6 +2341,7 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
     checkAuth();
     fetchStats();
     startPolling();
+    loadRelease();
   }
 
   if (document.readyState === 'loading') {
