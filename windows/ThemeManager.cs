@@ -133,7 +133,7 @@ namespace KickForgeDesktop
             }
 
             // kart yuzeyi
-            SetBrush("GlassFill", Glass(palette.Surface2, 0xEA, palette.Surface, 0xDC, palette.Surface2, 0xD0));
+            SetBrush("GlassFill", Glass(palette.Surface2, 0xDC, palette.Surface, 0xCC, palette.Surface2, 0xC2));
             // rozet / ikincil yuzey
             SetBrush("GlassFill2", Glass(palette.Surface3, 0xE8, palette.Surface2, 0xD6, palette.Surface3, 0xCC));
             // daha koyu cam (yazı alanları, listeler)
@@ -177,6 +177,9 @@ namespace KickForgeDesktop
 
             // ince kaydırma çubuğu burnu (metin renginin duran %22'si)
             SetBrush("ScrollThumb", new SolidColorBrush(Alpha(Hex(palette.Text), 0x38)));
+
+            // gerçek cam: dwm arkası bulanıklık açıkken pencere zemininin saydam tabanı
+            SetBrush("WindowBase", new SolidColorBrush(Alpha(Hex(palette.Bg), 0xB4)));
         }
     }
 }

@@ -304,12 +304,23 @@ namespace KickForgeDesktop.Pages
 
                 var messages = await _chat.FetchHistoryAsync(_ids, cts.Token);
                 var added = 0;
+
+                // moderatör bir mesajı sildiğinde kick onu tamamen tarihten
+                // çıkarıyor; polled örneklemi topla, sonra listede senkronla
+                var polledIds = new HashSet<string>();
+                var windowMin = DateTime.MaxValue;
+                var windowMax = DateTime.MinValue;
                 foreach (var message in messages.OrderBy(m => m.Time))
                 {
+                    polledIds.Add(message.Id);
+                    if (message.Time < windowMin) windowMin = message.Time;
+                    if (message.Time > windowMax) windowMax = message.Time;
                     if (!_seen.Add(message.Id)) continue;
                     Append(message);
                     added++;
                 }
+
+                SyncDeletedMessages(polledIds, windowMin, windowMax);
 
                 ChatState.Text = _ids.ChannelId == 0
                     ? "kanal bulunamadı"
@@ -332,6 +343,43 @@ namespace KickForgeDesktop.Pages
             finally
             {
                 _polling = false;
+            }
+        }
+
+        /// <summary>
+        /// tarih penceresi içinde olup artık kick'in cevabında bulunmayan
+        /// mesajlar silinmiştir: listeden çıkarılır.
+        /// </summary>
+        private void SyncDeletedMessages(HashSet<string> polledIds, DateTime windowMin, DateTime windowMax)
+        {
+            if (windowMin == DateTime.MaxValue) return;
+
+            var list = _shell.ChatFeed.Messages;
+            var follow = _chatAtBottom;
+            var removed = 0;
+
+            for (var i = list.Count - 1; i >= 0; i--)
+            {
+                var message = list[i];
+                // pencereden yeni olan kendi mesajlarımız henüz kick'e
+                // düşmediği için pencere dışı bırakıldı: dokunma
+                if (message.Time < windowMin || message.Time > windowMax) continue;
+                if (polledIds.Contains(message.Id)) continue;
+
+                list.RemoveAt(i);
+                _seen.Remove(message.Id);
+                removed++;
+            }
+
+            if (removed > 0)
+            {
+                UpdateChatChrome();
+                if (follow)
+                {
+                    Dispatcher.BeginInvoke(new Action(ScrollChatToEnd), DispatcherPriority.Loaded);
+                }
+
+                Log.Write("sohbet: kick tarihinde olmayan " + removed + " mesaj listeden çıkarıldı");
             }
         }
 

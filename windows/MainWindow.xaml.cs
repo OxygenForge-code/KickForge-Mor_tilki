@@ -83,6 +83,7 @@ namespace KickForgeDesktop
         private DateTime? _liveSince;
         private DateTime _lastSpikeNotify = DateTime.MinValue;
         private Timer? _saveTimer;
+        private bool _backdrop;
         private Services.LatestRelease? _update;
         private bool _updateDismissed;
         private bool _updateBusy;
@@ -132,6 +133,7 @@ namespace KickForgeDesktop
             SourceInitialized += (_, _) =>
             {
                 _hotkeys.Attach(this);
+                EnableRealGlass();
 
                 if (PresentationSource.FromVisual(this) is HwndSource source)
                 {
@@ -271,10 +273,10 @@ namespace KickForgeDesktop
         public void ApplySettings()
         {
             ThemeManager.Apply(Settings.Theme);
-            Background = ThemeManager.Get("Bg");
-
-            // kok katman da opak olsun: ekran goruntusu tanilamasi seffafligi siyah kaydediyordu
-            if (Root != null) Root.Background = ThemeManager.Get("Bg");
+            // dwm arka bulanikligi acikken zemin acik; degilse eski opak zemin
+            var baseBrush = ThemeManager.Get(_backdrop ? "WindowBase" : "Bg");
+            Background = baseBrush;
+            if (Root != null) Root.Background = _backdrop ? Brushes.Transparent : baseBrush;
             Opacity = Math.Max(0.4, Math.Min(1, Settings.Opacity / 100.0));
             Topmost = Settings.AlwaysOnTop;
             TitleChannel.Text = "· " + Settings.ChannelSlug;
@@ -751,6 +753,83 @@ namespace KickForgeDesktop
         }
 
         // ---------------------------------------------------------------- dışa açılan
+
+        // ------------------------------------------------------------
+        // gerçek sıvı cam: dwm arkası bulanıklık (acrylic). önce resmi
+        // win11 yolu; olmazsa win10 accent policy devreye girer. hiçbiri
+        // açılamazsa her şey eskisi gibi opak çalışır.
+        // ------------------------------------------------------------
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttributeData(IntPtr hwnd, int attribute, IntPtr data, int size);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct AccentPolicy
+        {
+            public int AccentState;
+            public uint AccentFlags;
+            public uint GradientColor;
+            public int AnimationId;
+        }
+
+        private void EnableRealGlass()
+        {
+            try
+            {
+                var hwnd = new WindowInteropHelper(this).EnsureHandle();
+
+                // sistem açık modda olsa bile acrylic koyu çeksin (paletler hep koyu)
+                var dark = 1;
+                if (DwmSetWindowAttribute(hwnd, 20, ref dark, 4) != 0)
+                {
+                    var darkLegacy = 1; // eski build'lerde attribute no 19
+                    DwmSetWindowAttribute(hwnd, 19, ref darkLegacy, 4);
+                }
+
+                var backdrop = 3; // DWMSBT_TRANSIENTWINDOW: win11 acrylic
+                if (DwmSetWindowAttribute(hwnd, 38, ref backdrop, 4) == 0)
+                {
+                    _backdrop = true;
+                    Log.Write("cam: dwm acrylic arkası açık (win11)");
+                }
+                else
+                {
+                    var policy = new AccentPolicy
+                    {
+                        AccentState = 4, // ACCENT_ENABLE_ACRYLICBLURBEHIND
+                        AccentFlags = 2,
+                        GradientColor = BackdropTint()
+                    };
+                    var size = Marshal.SizeOf(policy);
+                    var ptr = Marshal.AllocHGlobal(size);
+                    Marshal.StructureToPtr(policy, ptr, false);
+                    try { DwmSetWindowAttributeData(hwnd, 19, ptr, 4); }
+                    finally { Marshal.FreeHGlobal(ptr); }
+
+                    _backdrop = true;
+                    Log.Write("cam: dwm acrylic arkası açık (accent policy)");
+                }
+
+                // zemini saydama geç
+                Dispatcher.InvokeAsync(ApplySettings, DispatcherPriority.Loaded);
+            }
+            catch (Exception ex)
+            {
+                Log.Write("cam: arka bulanıklığı açılamadı · " + ex.Message);
+                _backdrop = false;
+            }
+        }
+
+        private static uint BackdropTint()
+        {
+            var baseBrush = ThemeManager.Get("WindowBase") as SolidColorBrush;
+            if (baseBrush == null) return 0xDB20391Eu; // yedek: koyu mor-beyaz ton @ %86 (ABGR)
+            var c = baseBrush.Color;
+            return 0xDB000000u | ((uint)c.B << 16) | ((uint)c.G << 8) | c.R;
+        }
 
         private static string UpdateSizeText(long? bytes) =>
             bytes is > 0 ? (bytes.Value / (1024.0 * 1024.0)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + " mb" : "?";
