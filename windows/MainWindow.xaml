@@ -15,10 +15,11 @@
     <Window.Resources>
         <!-- durum çubuğundaki küçük bağlantı düğmeleri -->
         <Style x:Key="StatusLink" TargetType="Button" BasedOn="{StaticResource Ghost}">
-            <Setter Property="Padding" Value="8,1" />
+            <Setter Property="Padding" Value="10,2" />
             <Setter Property="FontSize" Value="10" />
             <Setter Property="Margin" Value="6,0,0,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Opacity" Value="0.85" />
         </Style>
 
         <!-- dock cam parlaması: merkezi fare konumuna göre taşınır -->
@@ -62,14 +63,19 @@
                     Background="{DynamicResource GlassEdge}" IsHitTestVisible="False" />
 
             <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
-                <Border Width="20" Height="20" CornerRadius="5" Background="{DynamicResource Accent}">
+                <!-- isaret: cam kenarli accent kutu -->
+                <Grid Width="24" Height="24">
+                    <Border CornerRadius="7" Background="{DynamicResource PrimaryFill}" />
+                    <Border CornerRadius="7" BorderThickness="1" BorderBrush="#33FFFFFF" />
                     <Path Data="M 0,0 L 0,8 L 6,4 Z" Fill="{DynamicResource AccentInk}" HorizontalAlignment="Center"
                           VerticalAlignment="Center" Stretch="None" />
-                </Border>
-                <TextBlock Text="KICKFORGE" Style="{StaticResource Caption}" FontSize="11" Margin="9,0,0,0"
+                </Grid>
+                <TextBlock Text="KICKFORGE" Style="{StaticResource Caption}" FontSize="11" Margin="10,0,0,0"
                            VerticalAlignment="Center" Foreground="{DynamicResource Text}" />
                 <TextBlock x:Name="TitleChannel" Text="· mor tilki" Style="{StaticResource Caption}" FontSize="11"
-                           Margin="6,0,0,0" VerticalAlignment="Center" />
+                           Margin="6,0,0,0" VerticalAlignment="Center" Opacity="0.62" />
+                <Border Width="1" Height="16" Margin="14,0,0,0" Background="{DynamicResource Line}"
+                        VerticalAlignment="Center" />
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,6,0" VerticalAlignment="Center">
@@ -237,8 +243,10 @@
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock x:Name="StatusRight" Text="" Style="{StaticResource Caption}" VerticalAlignment="Center" />
-                <TextBlock x:Name="VersionText" Text="sürüm 2.1.0 · native" Style="{StaticResource Caption}"
-                           Margin="8,0,0,0" VerticalAlignment="Center" />
+                <Border Width="1" Height="12" Margin="10,0,9,0" Background="{DynamicResource Line}"
+                        VerticalAlignment="Center" />
+                <TextBlock x:Name="VersionText" Text="sürüm 2.3.0 · native" Style="{StaticResource Caption}"
+                           VerticalAlignment="Center" />
                 <Button Content="site" Style="{StaticResource StatusLink}" Click="OpenSite_Click" />
                 <Button Content="github" Style="{StaticResource StatusLink}" Click="OpenGithub_Click" />
             </StackPanel>
