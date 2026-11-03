@@ -1,6 +1,6 @@
 [package]
 name = "kickforge-desktop"
-version = "2.3.0"
+version = "2.4.0"
 description = "KickForge · mor tilki masaüstü uygulaması (Tauri)"
 edition = "2021"
 

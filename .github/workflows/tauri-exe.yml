@@ -1,0 +1,83 @@
+name: tauri exe
+
+# masaüstü uygulamasının tauri (rust + webview2) sürümü.
+# windows runner'da tek dosya exe olarak derlenip release'e yükleniyor;
+# site ve uygulamanın güncelleme denetimi bu release'i okuyor.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tauri/**'
+      - '.github/workflows/tauri-exe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  derle:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: 'tauri/src-tauri -> target'
+
+      - name: bağımlılıklar
+        shell: pwsh
+        working-directory: tauri
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { throw "npm ci düştü ($LASTEXITCODE)" }
+
+      - name: derle
+        shell: pwsh
+        working-directory: tauri
+        run: |
+          npx tauri build --no-bundle
+          if ($LASTEXITCODE -ne 0) { throw "tauri build düştü ($LASTEXITCODE)" }
+          New-Item -ItemType Directory -Force -Path ../out | Out-Null
+          Copy-Item src-tauri/target/release/kickforge-desktop.exe ../out/KickForge.exe -Force
+
+      - name: çıktıyı doğrula
+        shell: pwsh
+        run: |
+          if (-not (Test-Path out/KickForge.exe)) { throw 'out/KickForge.exe üretilmedi' }
+          $exe = Get-Item out/KickForge.exe
+          "tauri exe boyutu: {0:N0} bayt" -f $exe.Length | Add-Content $env:GITHUB_STEP_SUMMARY
+          $bytes = [System.IO.File]::ReadAllBytes($exe.FullName)[0..1]
+          if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw 'çıktı bir Windows exe değil' }
+
+      - name: release'e yükle
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "tauri-r$env:GITHUB_RUN_NUMBER"
+          $version = (Get-Content 'tauri/src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json).version
+          $notes = @(
+            "sürüm $version · tek dosya windows uygulaması · rust / tauri / webview2",
+            "",
+            "arayüzü webview2 çiziyor (windows 10/11'de hazır); site yüklenmiyor.",
+            "tek dosya, kurulum yok: indir, çift tıkla, çalışır.",
+            "",
+            "ayarlar ve geçmiş: %APPDATA%\KickForge\tauri",
+            "kick oturumu: %APPDATA%\KickForge\native\auth.dat (DPAPI)",
+            "",
+            "kaynak: tauri/ · site: https://kickforge-mor-tilki.vercel.app/"
+          ) -join "`n"
+          gh release create $tag "out/KickForge.exe" `
+            --repo $env:GITHUB_REPOSITORY `
+            --title "KickForge $version · tauri r$env:GITHUB_RUN_NUMBER" `
+            --notes $notes `
+            --latest
+          if ($LASTEXITCODE -ne 0) { throw "release oluşturulamadı ($LASTEXITCODE)" }

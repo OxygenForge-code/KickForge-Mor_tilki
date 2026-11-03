@@ -4,7 +4,7 @@ const curWin = window.__TAURI__.window.getCurrentWindow();
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "2.3.0";
+const APP_VERSION = "2.4.0";
 let S = {};                  // ayarlar
 let nulledNotif = false;     // toptan susturma
 let lastStats = null;

@@ -4,12 +4,10 @@ name: windows exe
 # windows-latest runner'da tek dosya (self-contained) olarak derlenip
 # GitHub Release'e yükleniyor. Visual Studio gerekmiyor.
 
+# artık yayınları tauri sürümü üretiyor (tauri-exe.yml). bu akış yalnızca
+# istenirse elle çalışır; aksi hâlde eski wpf exe'si "son sürüm" olarak
+# siteye ve güncelleme balonuna düşerdi.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'windows/**'
-      - '.github/workflows/windows-exe.yml'
   workflow_dispatch:
 
 permissions:

@@ -1639,26 +1639,21 @@ body[data-live="true"] .readout--viewers .readout__value { color: var(--lime); }
           <dd>
             <strong>Windows için tek dosya .exe</strong> de var:
             <a href="https://github.com/OxygenForge-code/KickForge-Mor_tilki/releases/latest/download/KickForge.exe">KickForge.exe</a>
-            indir, çift tıkla — kurulum yok, kendi .NET çalışma zamanını taşıyor,
-            ayarlarını <code>%APPDATA%\KickForge\native</code> altında tutuyor.
-            <strong>Electron değil:</strong> C# + WPF ile yazılmış native bir
-            uygulama; içinde gömülü tarayıcı yok, siteyi yüklemiyor.
-            Uygulamada <strong>yayın ve sohbet de var</strong>: video, Windows'un
-            kendi Edge WebView2 bileşeninde oynuyor (ayrı indirme yok); sohbet
-            native — mesajlar Kick'in kendi ucundan okunuyor, yazmak için
-            uygulamadan Kick girişi yapılıyor (OAuth + PKCE, token'lar DPAPI ile
-            şifreli saklanıyor). Üstüne: yayın başladı/bitti bildirimi ve kendi
-            uyarı sesleri, saatlerce biriken izleyici eğrisi, ses çıkışı
-            (kulaklık) seçimi + 528 Hz test tonu, her zaman üstte, kapatınca
-            tepside kalma, sistem kısayolları, windows ile birlikte açılma,
-            sessiz saatler, dört tema.
-            Derleme GitHub Actions'ta, kaynaktan <code>dotnet publish</code>
-            ile de çıkıyor. <strong>2.2.0'la yüzeyler gerçek cam:</strong>
-            Windows'un kendi DWM acrylic katmanı pencerinin arkasındaki
-            masaüstünü bulanıklaştırıyor; camın içinden gerçek görüntü
-            geçiyor. Yeni bir sürüm çıktığında uygulama bunu kendiliğinden
-            görüyor — <em>şimdi kur</em> dersen güncel exe'yi indiriyor,
-            çıkışı bekleyip yeniden başlatıyor.
+            indir, çift tıkla — kurulum yok. <strong>Electron değil:</strong>
+            Rust + Tauri ile yazılmış bir uygulama; arayüzü Windows'un kendi
+            WebView2 bileşeni çiziyor (Windows 10/11'de hazır, ayrı indirme
+            yok), siteyi yüklemiyor. Ayarlarını
+            <code>%APPDATA%\KickForge\tauri</code> altında tutuyor.
+            İçinde: canlı izleyici sayacı ve altı ölçü kutusu (takipçi,
+            kaynak, gecikme, kanal no, güncelleme), saatlerce biriken izleyici
+            eğrisi ve geçmiş, sohbet — mesajlar sunucu tarafındaki uçtan
+            okunuyor, yazmak için uygulamadan Kick girişi yapılıyor (token
+            yalnızca bu bilgisayarda, DPAPI ile şifreli).
+            <strong>Tek tema:</strong> koyu ink zemin, cam yüzeyler ve lime
+            accent; tema seçici yok, her ekran aynı dilde.
+            Derleme GitHub Actions'ta <code>tauri build</code> ile çıkıyor.
+            Yeni bir sürüm yayınlandığında uygulama bunu kendiliğinden görüp
+            <em>güncelleme var</em> balonuyla haber veriyor.
           </dd>
         </div>
         <div class="deflist__row">
