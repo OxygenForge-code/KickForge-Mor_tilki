@@ -85,6 +85,15 @@
               <div class="glass-2 tile"><div class="tile-label">Kanal no</div><div class="metric" id="mChannelId">—</div></div>
               <div class="glass-2 tile"><div class="tile-label">Güncelleme</div><div class="metric" id="mUpdated">—</div></div>
             </div>
+            <div class="glass-2 tile mt8" id="radarCell">
+              <div class="tile-label">Radar</div>
+              <div class="row mt12" style="align-items:flex-start;gap:16px">
+                <div class="radar" id="radar"><span class="sweep"></span><span class="blip" id="radarBlip"></span></div>
+                <div style="min-width:0;flex:1">
+                  <div class="caption" id="radarNote">radar modu kapalı</div>
+                </div>
+              </div>
+            </div>
             <div class="glass-2 tile mt8">
               <div class="tile-label">Hızlı denetim</div>
               <div class="row mt12" style="flex-wrap:wrap">
@@ -107,6 +116,10 @@
             <h2 class="h2" style="margin:0">yayın</h2>
             <span class="chip" id="playerState"><span class="dot" id="playerDot"></span><span id="playerStateText">hazır</span></span>
             <span class="grow"></span>
+            <button class="kaydet-btn" id="btnSaveVod" title="kick kayıtları (VOD) — yayın kayıtlarda kalır, sonra buradan izlersin">
+              <span class="kc-icon"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21V3z"/></svg></span>
+              <span class="kc-text">KAYDET</span>
+            </button>
             <button class="ghost-btn" id="btnPlayerToggle" title="oynatıcıyı aç / kapat">oynatıcıyı kapat</button>
             <button class="ghost-btn" id="btnKickOpen" title="kick.com'da aç">tarayıcıda aç</button>
           </div>
@@ -135,15 +148,19 @@
             <span class="node muted" style="font-size:12px">Mesaj yazmak için kick hesabınla oturum aç (tarayıcıda açılır).</span>
           </div>
           <div class="chat-input-row" id="chatInputRow">
-            <div class="search-group">
-              <svg class="search-icon" viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.02l4.34 4.35.71-.71-4.35-4.34A8 8 0 0010 2zm0 1a7 7 0 110 14 7 7 0 010-14z"/></svg>
-              <input class="search-input" id="chatInput" placeholder="sohbete yaz…" autocomplete="off" />
+            <div class="msg-box">
+              <div class="ms-emoji-wrap">
+                <button class="ms-emoji" id="btnEmoji" title="emoji ekle">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="10" r="1.1" fill="currentColor"/><circle cx="15" cy="10" r="1.1" fill="currentColor"/><path d="M8.3 14.2c1 1.3 2.3 2 3.7 2s2.7-.7 3.7-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                  <span class="tooltip">emoji</span>
+                </button>
+                <div class="ms-pop" id="emojiPop"></div>
+              </div>
+              <input class="ms-input" id="chatInput" placeholder="sohbete yaz…" autocomplete="off" />
+              <button class="ms-send" id="btnSend" title="gönder (gir)">
+                <svg viewBox="0 0 24 24"><path d="M4 11.8L20 3l-3.2 18-4.6-6.6L4 11.8z"/></svg>
+              </button>
             </div>
-            <button class="send-btn" id="btnSend" title="gönder">
-              <span class="send-halo"></span>
-              <svg class="plane" viewBox="0 0 24 24"><path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816L1.112 13.845l-.011 7.912z"/></svg>
-              <svg class="plane-in" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-            </button>
           </div>
           <div class="chat-note" id="chatNote"></div>
         </div>
@@ -195,6 +212,7 @@
             <div class="set-row"><div><div class="set-name">yeni takipçi</div></div><label class="swtch"><input type="checkbox" id="setNotifyFollower" /><span class="track"><span class="knob"></span></span></label></div>
             <div class="set-row"><div><div class="set-name">izleyici sıçraması</div></div><label class="swtch"><input type="checkbox" id="setNotifySpike" /><span class="track"><span class="knob"></span></span></label></div>
             <div class="set-row"><div><div class="set-name">kurtarma uyarısı</div><div class="set-sub">veri gecikmesi çözülünce</div></div><label class="swtch"><input type="checkbox" id="setNotifyRecover" /><span class="track"><span class="knob"></span></span></label></div>
+            <div class="set-row"><div><div class="set-name">radar modu</div><div class="set-sub">yayın açılınca radarında mor-tilki noktası belirir</div></div><label class="swtch"><input type="checkbox" id="setRadar" /><span class="track"><span class="knob"/></span></label></div>
             <div class="set-row">
               <div><div class="set-name">sessiz saatler</div><div class="set-sub">saat 23–9 arası sus</div></div>
               <label class="swtch"><input type="checkbox" id="setQuiet" /><span class="track"><span class="knob"></span></span></label>
@@ -293,10 +311,69 @@
       <span class="spacer"></span>
       <span id="statusHint"></span>
       <span class="st-sep"></span>
-      <span id="versionText">sürüm 2.5.0 · tauri</span>
+      <span id="versionText">sürüm 2.6.0 · tauri</span>
       <button class="stlink" id="lnkSite">site</button>
       <button class="stlink" id="lnkGithub">github</button>
     </div>
+  </div>
+
+  <!-- diğer sekmelerdeyken yayın kartı -->
+  <div class="mini-card" id="miniCard" style="display:none">
+    <div class="mc-top">
+      <img class="mc-pfp" id="mcPfp" src="" alt="" />
+      <div style="min-width:0;flex:1">
+        <div class="mc-title-1" id="mcTitle1">mor-tilki</div>
+        <div class="mc-title-2" id="mcTitle2">yayın sürüyor</div>
+      </div>
+      <div class="mc-eq"><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><i class="l5"></i></div>
+    </div>
+    <div class="mc-bar"><div class="mc-el" id="mcElapsed"></div></div>
+    <span class="mc-time mc-now" id="mcTime">0:00:00</span>
+    <span class="mc-time mc-full">canlı</span>
+    <div class="mc-ctl">
+      <button class="mc-btn" id="mcGoto" title="stüdyoya dön">↗</button>
+      <button class="mc-btn" id="mcHide" title="kartı kapat">✕</button>
+    </div>
+  </div>
+
+  <!-- bu yayını ne kadar beğendin? (--. api/rate ile senkron) -->
+  <div class="rating-pop" id="ratingPop">
+    <div class="tool-box"><button class="btn-close" id="ratingClose" title="kapat">✕</button></div>
+    <div class="text-content">bu yayını ne kadar beğendin?</div>
+    <div class="icons-box">
+      <label class="icons" id="likeWrap">
+        <input type="checkbox" class="input-box" id="likeCheckbox" />
+        <svg class="sw" viewBox="0 0 24 24">
+          <g id="icon-like-regular"><path d="M7 22V10.7l4.3-8.2c.6-1.1 2.2-.8 2.4.4l.5 3.4c.1.5.5.9 1 .9h3.9c1.3 0 2.2 1.2 1.9 2.4l-1.7 7.1c-.3 1.2-1.4 2-2.6 2H7z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h4v12H3z" fill="currentColor"/></g>
+          <g id="icon-like-solid" style="display:none"><path d="M9.7 1.8L6.6 8.5c-.4.2-.7.4-.7.9v11c0 .6.4 1 1 1h2v-13c0-.5.3-1 .8-1.2l1.9-3.4-.3-1.9c0-.4-.3-.7-.6-.8-.4-.2-.9-.7-1 .7z" fill="currentColor"/><path d="M14.2 24h4.2c1 0 1.9-.7 2.1-1.6l1.8-7.3c.3-1.4-.7-2.7-2.2-2.7h-5.5l1-4.4.1-.4c0-.4-.2-.8-.4-1.1L14.2 2 8.4 8.3c-.2.3-.4.6-.4 1v12c0 .6.5 1 1 1h5.2z" fill="currentColor"/></g>
+        </svg>
+        <span class="fw-dot" id="fwLike"></span>
+        <span class="btn-label like-text-content"><span id="likeCount">beğen · 0</span></span>
+      </label>
+      <label class="icons" id="dislikeWrap">
+        <input type="checkbox" class="input-box" id="dislikeCheckbox" />
+        <svg class="sw" viewBox="0 0 24 24">
+          <g id="icon-dislike-regular"><path d="M7 22V10.7l4.3-8.2c.6-1.1 2.2-.8 2.4.4l.5 3.4c.1.5.5.9 1 .9h3.9c1.3 0 2.2 1.2 1.9 2.4l-1.7 7.1c-.3 1.2-1.4 2-2.6 2H7z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h4v12H3z" fill="currentColor"/></g>
+          <g id="icon-dislike-solid" style="display:none"><path d="M9.7 1.8L6.6 8.5c-.4.2-.7.4-.7.9v11c0 .6.4 1 1 1h2v-13c0-.5.3-1 .8-1.2l1.9-3.4-.3-1.9c0-.4-.3-.7-.6-.8-.4-.2-.9-.7-1 .7z" fill="currentColor"/><path d="M14.2 24h4.2c1 0 1.9-.7 2.1-1.6l1.8-7.3c.3-1.4-.7-2.7-2.2-2.7h-5.5l1-4.4.1-.4c0-.4-.2-.8-.4-1.1L14.2 2 8.4 8.3c-.2.3-.4.6-.4 1v12c0 .6.5 1 1 1h5.2z" fill="currentColor"/></g>
+        </svg>
+        <span class="fw-dot" id="fwDislike"></span>
+        <span class="btn-label dislike-text-content"><span id="dislikeCount">beğenmedim · 0</span></span>
+      </label>
+    </div>
+    <div class="nodes-ips">oyların herkese senkronlanır · sitendeki sayaç</div>
+  </div>
+
+  <!-- sağ tık menüsü -->
+  <div class="ctx-menu" id="ctxMenu">
+    <ul>
+      <li class="item" data-act="refresh"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 3v4h-4"/></svg><span>verileri yenile</span></li>
+      <li class="item" data-act="player"><svg viewBox="0 0 24 24"><path d="M5 4l14 8-14 8V4z"/></svg><span id="ctxPlayerText">oynatıcıyı aç</span></li>
+      <li class="item" data-act="pin"><svg viewBox="0 0 24 24"><path d="M12 3l5 5-3 1-3 8-2-2-4-1 6-6 1-5z"/></svg><span id="ctxPinText">her zaman üstte</span></li>
+      <li class="item" data-act="mute"><svg viewBox="0 0 24 24"><path d="M12 4a5 5 0 015 5v4l2 3H5l2-3V9a5 5 0 015-5z"/><path d="M10 19a2 2 0 004 0"/></svg><span id="ctxMuteText">bildirimleri sustur</span></li>
+      <li class="sep"></li>
+      <li class="item" data-act="kick"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c-3 3-3 14 0 17M12 3.5c3 3 3 14 0 17"/></svg><span>kick.com'da aç</span></li>
+      <li class="item danger" data-act="quit"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span>uygulamayı kapat</span></li>
+    </ul>
   </div>
 
   <script src="app.js"></script>

@@ -4,7 +4,7 @@ const curWin = window.__TAURI__.window.getCurrentWindow();
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "2.5.0";
+const APP_VERSION = "2.6.0";
 let S = {};                  // ayarlar
 let nulledNotif = false;     // toptan susturma
 let lastStats = null;
@@ -21,9 +21,13 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 /* ═══════════ yayın oynatıcı ═══════════ */
 let playerOn = false;
 let playerAutoTried = false;
+let playerStartedAt = 0;
+let miniDismissed = false;
 
 function playerEnsure(on) {
   playerOn = on;
+  if (on && !playerStartedAt) { playerStartedAt = Date.now(); miniDismissed = false; }
+  if (!on) playerStartedAt = 0;
   const box = $("playerBox");
   const frame = $("playerFrame");
   box.classList.toggle("playing", on);
@@ -56,6 +60,7 @@ function show(page) {
     playerAutoTried = true;
     playerEnsure(true);
   }
+  updateMini();
 }
 
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => show(t.dataset.page)));
@@ -111,6 +116,7 @@ async function loadSettings() {
   $("setOnTop").checked = !!S.alwaysOnTop;
   $("setTray").checked = S.minimizeToTray !== false;
   $("setAutoStart").checked = !!S.startWithWindows;
+  $("setRadar").checked = !!S.radarMode;
   if (S.alwaysOnTop) await curWin.setAlwaysOnTop(true);
   $("brandChannel").textContent = "· " + S.channelSlug;
   $("dockName").textContent = S.channelSlug;
@@ -191,6 +197,8 @@ async function pollNow(first = false) {
     $("sideLiveDot").className = "dot " + (live ? "live" : "");
     $("sideLiveText").textContent = live ? "YAYINDA" : "yayın kapalı";
     status(live ? "bağlandı · yayın açık" : "bağlandı · yayın kapalı", live ? "live" : "");
+    updateRadar();
+    maybeShowRating(live);
 
     // dock
     $("dockMeta").textContent = `${(Number(st.followersCount) || 0).toLocaleString("tr-TR")} takipçi · ${st.source ? (st.source === "site" ? "site ucu" : "kick.com") : ""}`;
@@ -233,16 +241,9 @@ async function pollNow(first = false) {
     $("sessionTitle").textContent = "veri okunamadı";
   }
 }
+/* bildirim susturma: toggleNotif aşağıdaki "yeni cssler" bölümünde ortak */
 
-/* bildirim: toptan susturma butonu (css bileşeni) */
-$("btnNotif").addEventListener("click", () => {
-  nulledNotif = !nulledNotif;
-  $("btnNotif").classList.toggle("muted", nulledNotif);
-  $("notifLabel").textContent = nulledNotif ? "bildirimler suslu" : "bildirimler açık";
-  $("notifHint").textContent = nulledNotif ? "bu oturum için kapatıldı" : "yayın açılınca ve takipçi değişince uyarır";
-});
-
-/* dosya ilerisi: bildirim çıkarma (basit toast yoksa native alert yerine inline) */
+/* inline bildirim notu */
 function notice(msg, err = false) {
   $("chatNote").textContent = msg;
   $("chatNote").style.color = err ? "var(--danger)" : "var(--dim)";
@@ -462,3 +463,201 @@ window.addEventListener("resize", drawSpark);
   await pollNow(true);
   schedulePoll();
 })();
+
+/* ═══════════ yeni cssler: sağ tık menüsü ═══════════ */
+function ctxRefresh() {
+  $("ctxPlayerText").textContent = playerOn ? "oynatıcıyı kapat" : "oynatıcıyı aç";
+  $("ctxPinText").textContent = "her zaman üstte";
+  $("ctxMuteText").textContent = nulledNotif ? "bildirimleri aç" : "bildirimleri sustur";
+}
+
+function ctxOpenAt(x, y) {
+  const m = $("ctxMenu");
+  ctxRefresh();
+  m.classList.add("open");
+  const w = m.offsetWidth || 210, h = m.offsetHeight || 220;
+  m.style.left = Math.min(x, window.innerWidth - w - 8) + "px";
+  m.style.top = Math.min(y, window.innerHeight - h - 8) + "px";
+}
+
+function ctxClose() { $("ctxMenu").classList.remove("open"); }
+
+document.addEventListener("contextmenu", (e) => {
+  if (e.target.closest(".chat-line, .chat-feed, input")) { ctxClose(); return; }
+  e.preventDefault();
+  ctxOpenAt(e.clientX, e.clientY);
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#ctxMenu")) ctxClose();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { ctxClose(); closeEmoji(); } });
+
+document.querySelectorAll("#ctxMenu .item").forEach((li) => {
+  li.addEventListener("click", async () => {
+    const act = li.dataset.act;
+    ctxClose();
+    if (act === "refresh") pollNow(true);
+    if (act === "player") playerEnsure(!playerOn);
+    if (act === "pin") {
+      const on = !(await curWin.isAlwaysOnTop());
+      await curWin.setAlwaysOnTop(on);
+      S = { ...S, alwaysOnTop: on };
+      $("setOnTop").checked = on;
+      $("btnPin").style.color = on ? "var(--accent)" : "";
+    }
+    if (act === "mute") toggleNotif();
+    if (act === "kick") openUrl("https://kick.com/" + (S.channelSlug || "mor-tilki"));
+    if (act === "quit") curWin.close();
+  });
+});
+
+/* ═══════════ bildirim susturma ortak işlevi ═══════════ */
+function toggleNotif() {
+  nulledNotif = !nulledNotif;
+  $("btnNotif").classList.toggle("muted", nulledNotif);
+  $("notifLabel").textContent = nulledNotif ? "bildirimler suslu" : "bildirimler açık";
+  $("notifHint").textContent = nulledNotif ? "bu oturum için kapatıldı" : "yayın açılınca ve takipçi değişince uyarır";
+}
+$("btnNotif").onclick = null; // aşağıdaki listener ile değiştirilecek
+$("btnNotif").addEventListener("click", toggleNotif);
+
+/* ═══════════ radar modu ═══════════ */
+function updateRadar() {
+  const on = !!S.radarMode;
+  $("radarCell").style.display = on ? "block" : "none";
+  if (!on) return;
+  const live = !!(lastStats && lastStats.isLive);
+  $("radarBlip").className = "blip " + (live ? "on" : "");
+  $("radarNote").textContent = live ? "NOKTADA · mor-tilki yayınla" : "radar açık · yayın bekleniyor";
+}
+
+$("setRadar").addEventListener("change", () => {
+  S.radarMode = $("setRadar").checked;
+  saveSettings();
+  updateRadar();
+});
+
+/* ═══════════ KAYDET (VOD) düğmesi ═══════════ */
+$("btnSaveVod").addEventListener("click", () => {
+  openUrl("https://kick.com/" + (S.channelSlug || "mor-tilki") + "/videos");
+  $("statusHint").textContent = "kick kayıtları (VOD) tarayıcıda açıldı · yayın bitece seyir burada";
+  setTimeout(() => { $("statusHint").textContent = ""; }, 6000);
+});
+
+/* ═══════════ emoji ═══════════ */
+const EMOJIS = ["😂","😍","🔥","👏","🦊","⭐","😭","🤣","🤝","💯","😱","😎","❤️","🙏","👀","🎉","🤯","💀","🥳","🫡","🤌","😈"];
+const pop = $("emojiPop");
+EMOJIS.forEach((em) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = em;
+  b.addEventListener("click", () => {
+    const el = $("chatInput");
+    const s = el.selectionStart ?? el.value.length, e2 = el.selectionEnd ?? s;
+    el.value = el.value.slice(0, s) + em + el.value.slice(e2);
+    el.focus();
+    el.selectionStart = el.selectionEnd = s + em.length;
+    closeEmoji();
+  });
+  pop.appendChild(b);
+});
+
+function closeEmoji() { pop.classList.remove("open"); }
+$("btnEmoji").addEventListener("click", (e) => { e.stopPropagation(); pop.classList.toggle("open"); });
+document.addEventListener("click", (e) => { if (!e.target.closest(".ms-emoji-wrap")) closeEmoji(); });
+
+/* ═══════════ mini video kartı ═══════════ */
+function fmtElapsed(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return h + ":" + String(m).padStart(2, "0") + ":" + String(ss).padStart(2, "0");
+}
+
+function updateMini() {
+  const card = $("miniCard");
+  const active = document.querySelector(".page.active");
+  const show = playerOn && active && active.id !== "page-studio" && !miniDismissed;
+  if (!show) { card.style.display = "none"; card.classList.remove("show"); return; }
+  if (card.style.display !== "block") { card.style.display = "block"; card.classList.add("show"); }
+  const live = !!(lastStats && lastStats.isLive);
+  const title = live ? (lastStats.sessionTitle || "yayın sürüyor") : "yayın kapalı · oynatıcı açık";
+  $("mcTitle1").textContent = "@" + (S.channelSlug || "mor-tilki");
+  $("mcTitle2").textContent = title;
+  const pic = lastStats && lastStats.profilePic;
+  if (pic && $("mcPfp").getAttribute("src") !== pic) $("mcPfp").src = pic;
+  const ms = playerStartedAt ? Date.now() - playerStartedAt : 0;
+  $("mcTime").textContent = fmtElapsed(ms);
+  $("mcElapsed").style.width = Math.min(100, (ms / (4 * 3600 * 1000)) * 100) + "%";
+}
+
+setInterval(updateMini, 1000);
+$("mcGoto").addEventListener("click", () => { show("studio"); });
+$("mcHide").addEventListener("click", () => { miniDismissed = true; updateMini(); });
+
+/* ═══════════ beğen / beğenme (site senkronu) ═══════════ */
+let ratingShown = false;
+let voted = false;
+
+function maybeShowRating(live) {
+  if (!live || ratingShown || voted) return;
+  ratingShown = true;
+  setTimeout(showRatingPop, 5000);
+}
+
+function formatCount(n) { return n >= 1000 ? (n / 1000).toFixed(1).replace(".0", "") + "k" : n; }
+
+async function showRatingPop() {
+  if (voted) return;
+  $("likeCount").textContent = "beğen · …";
+  $("dislikeCount").textContent = "beğenmedim · …";
+  $("ratingPop").classList.add("show");
+  try {
+    const r = await invoke("rate_get", { apiBase: S.apiBase });
+    $("likeCount").textContent = "beğen · " + formatCount(r.likes | 0);
+    $("dislikeCount").textContent = "beğenmedim · " + formatCount(r.dislikes | 0);
+    $("ratingPop").querySelector(".nodes-ips").textContent = "oyların herkese senkronlanır · sitendeki sayaç";
+  } catch {
+    $("likeCount").textContent = "beğen";
+    $("dislikeCount").textContent = "beğenmedim";
+    $("ratingPop").querySelector(".nodes-ips").textContent = "senkron ucu ulaşılamaz · yalnız yerel";
+  }
+}
+
+function fw(dotEl) {
+  dotEl.classList.add("on");
+  setTimeout(() => dotEl.classList.remove("on"), 6300);
+}
+
+$("likeCheckbox").addEventListener("change", async (e) => {
+  if (voted || !e.target.checked) return;
+  voted = true;
+  $("dislikeCheckbox").disabled = true;
+  fw($("fwLike"));
+  try {
+    const r = await invoke("rate_post", { apiBase: S.apiBase, likes: 1, dislikes: 0 });
+    $("likeCount").textContent = "beğen · " + formatCount(r.likes | 0);
+  } catch {
+    $("likeCount").textContent = "beğen · senkron yok";
+  }
+  $("ratingPop").querySelector(".nodes-ips").textContent = "geri bildirimin için teşekkürler";
+});
+
+$("dislikeCheckbox").addEventListener("change", async (e) => {
+  if (voted || !e.target.checked) return;
+  voted = true;
+  $("likeCheckbox").disabled = true;
+  fw($("fwDislike"));
+  try {
+    const r = await invoke("rate_post", { apiBase: S.apiBase, likes: 0, dislikes: 1 });
+    $("dislikeCount").textContent = "beğenmedim · " + formatCount(r.dislikes | 0);
+  } catch {
+    $("dislikeCount").textContent = "beğenmedim · senkron yok";
+  }
+  $("ratingPop").querySelector(".nodes-ips").textContent = "geri bildirimin kaydedildi";
+});
+
+$("ratingClose").addEventListener("click", () => {
+  $("ratingPop").classList.remove("show");
+  ratingShown = true;
+});
