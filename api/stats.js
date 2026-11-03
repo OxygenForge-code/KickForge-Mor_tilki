@@ -42,7 +42,10 @@ function temizle(data) {
     followersCount: data.followers_count || 0,
     profilePic: data.user ? data.user.profile_pic : null,
     verified: data.verified || (data.user && data.user.verified) || false,
-    broadcasterId: data.user ? data.user.id : null
+    broadcasterId: data.user ? data.user.id : null,
+    // masaüstü (tauri/wpf) sohbeti kanal no ile çalışır; kick.com'a
+    // istemciden gitmek Cloudflare 403 yediği için kimliği burada veriyoruz
+    channelId: data.id || 0
   };
 }
 
