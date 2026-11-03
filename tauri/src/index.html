@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KickForge · mor tilki</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient">
+    <div class="blob a1"></div>
+    <div class="blob a2"></div>
+    <div class="blob a3"></div>
+  </div>
+
+  <div class="shell">
+
+    <!-- başlık çubuğu -->
+    <div class="titlebar" data-tauri-drag-region>
+      <div class="brand" data-tauri-drag-region>
+        <div class="brand-mark">▶</div>
+        <span class="brand-name">KICKFORGE</span>
+        <span class="brand-channel" id="brandChannel">· mor-tilki</span>
+        <span class="tb-sep"></span>
+        <span class="chip" id="stateChip"><span class="dot" id="stateDot"></span><span id="stateText">BAĞLANIYOR</span></span>
+      </div>
+      <div class="spacer" data-tauri-drag-region></div>
+      <button class="winbtn" id="btnGear" title="ayarlar">⚙</button>
+      <button class="winbtn" id="btnPin" title="her zaman üstte">📌</button>
+      <button class="winbtn" id="btnMin" title="küçült">&#xE921;</button>
+      <button class="winbtn" id="btnMax" title="büyüt">&#xE922;</button>
+      <button class="winbtn close" id="btnClose" title="kapat">&#xE8BB;</button>
+    </div>
+
+    <!-- içerik -->
+    <main class="content">
+      <section class="page active" id="page-live">
+        <div class="live-grid">
+          <div>
+            <div class="glass hero">
+              <div class="row hero-label">
+                <span class="dot" id="heroDot"></span>
+                <span class="tile-label">İzleyici</span>
+                <span class="chip" id="liveChip"><span class="dot" id="liveDot"></span><span id="liveText">public...</span></span>
+              </div>
+              <div class="hero-num" id="viewerNum" style="color:var(--accent)">—</div>
+              <div class="hero-sub" id="sessionTitle">başlık bekleniyor…</div>
+              <div class="hero-accent"></div>
+              <div class="hero-actions">
+                <button class="fx-btn" id="btnWatch" title="kick.com'da aç">
+                  <span class="fx-layer"></span>
+                  <span class="fx-core">CANLIYI İZLE</span>
+                </button>
+                <button class="ghost-btn" id="btnChatGo">sohbete aç</button>
+                <button class="ghost-btn" id="btnRefresh">⟳ yenile</button>
+              </div>
+              <div class="stalebar" id="staleBar" style="display:none"><i style="width:0%" id="staleFill"></i></div>
+            </div>
+
+            <div class="glass spark-card">
+              <div class="row">
+                <span class="tile-label">Eğri · son örnekler</span>
+                <span class="grow"></span>
+                <span class="mono" id="sampleCount" style="font-size:11px;color:var(--faint)">0 örnek</span>
+              </div>
+              <canvas id="spark" height="96" style="width:100%;height:96px;margin-top:10px"></canvas>
+              <div class="spark-meta">
+                <span>Zirve <b id="peakText">0</b></span>
+                <span>Ortalama <b id="avgText">0</b></span>
+                <span>Takipçi <b id="heroFollowers">0</b></span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="tiles">
+              <div class="glass-2 tile"><div class="tile-label">Takipçi</div><div class="metric" id="mFollowers">—</div></div>
+              <div class="glass-2 tile"><div class="tile-label">Oturum</div><div class="metric" id="mSession">—</div></div>
+            </div>
+            <div class="tile-row mt8">
+              <div class="glass-2 tile"><div class="tile-label">Kaynak</div><div class="metric" id="mSource">—</div></div>
+              <div class="glass-2 tile"><div class="tile-label">Gecikme</div><div class="metric" id="mLatency">—</div></div>
+            </div>
+            <div class="tile-row mt8">
+              <div class="glass-2 tile"><div class="tile-label">Kanal no</div><div class="metric" id="mChannelId">—</div></div>
+              <div class="glass-2 tile"><div class="tile-label">Güncelleme</div><div class="metric" id="mUpdated">—</div></div>
+            </div>
+            <div class="glass-2 tile mt8">
+              <div class="tile-label">Hızlı denetim</div>
+              <div class="row mt12" style="flex-wrap:wrap">
+                <button class="notif-btn" id="btnNotif" title="bildirimleri duraklat / devam ettir">
+                  <svg class="bell" viewBox="0 0 24 24"><path d="M12 22a2.98 2.98 0 0 0 2.98-3H9.02A2.98 2.98 0 0 0 12 22zm7-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C6.63 5.36 5 7.92 5 11v5l-2 2v1h18v-1l-2-2z"/></svg>
+                  <span class="notif-label" id="notifLabel">bildirimler açık</span>
+                  <span class="notif-arrow">›</span>
+                </button>
+              </div>
+              <div class="mt12 caption" id="notifHint">yayın açılınca ve takipçi değişince uyarır</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-studio">
+        <div class="chat-card glass">
+          <div class="row">
+            <h2 class="h2" style="margin:0">sohbet</h2>
+            <span class="grow"></span>
+            <span class="chip" id="chatState"><span class="dot" id="chatDot"></span><span id="chatStateText">BAĞLANIYOR</span></span>
+          </div>
+          <div class="chat-feed mt12" id="chatFeed">
+            <div class="loading-row"><div class="loader"></div><span>sohbet yükleniyor…</span></div>
+          </div>
+          <div class="login-row" id="loginRow" style="display:none">
+            <button class="login-btn" id="btnLogin">Kick ile giriş yap</button>
+            <span class="node muted" style="font-size:12px">Mesaj yazmak için kick hesabınla oturum aç (tarayıcıda açılır).</span>
+          </div>
+          <div class="chat-input-row" id="chatInputRow">
+            <div class="search-group">
+              <svg class="search-icon" viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.02l4.34 4.35.71-.71-4.35-4.34A8 8 0 0010 2zm0 1a7 7 0 110 14 7 7 0 010-14z"/></svg>
+              <input class="search-input" id="chatInput" placeholder="sohbete yaz…" autocomplete="off" />
+            </div>
+            <button class="send-btn" id="btnSend" title="gönder">
+              <span class="send-halo"></span>
+              <svg class="plane" viewBox="0 0 24 24"><path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816L1.112 13.845l-.011 7.912z"/></svg>
+              <svg class="plane-in" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+            </button>
+          </div>
+          <div class="chat-note" id="chatNote"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-history">
+        <div class="glass" style="padding:18px">
+          <div class="row">
+            <h2 class="h2" style="margin:0">geçmiş</h2>
+            <span class="grow"></span>
+            <button class="ghost-btn" id="btnHistRefresh">⟳ yenile</button>
+          </div>
+          <div id="histList" class="mt12"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-settings">
+        <div class="set-grid">
+          <div class="set-card glass">
+            <h2 class="h2">kanal & veri</h2>
+            <div class="set-row">
+              <div style="min-width:0">
+                <div class="set-name">kanal</div>
+                <div class="set-sub">kick.com adresindeki kanal adı</div>
+              </div>
+              <div class="search-group" style="flex:1;max-width:260px">
+                <svg class="search-icon" viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.02l4.34 4.35.71-.71-4.35-4.34A8 8 0 0010 2zm0 1a7 7 0 110 14 7 7 0 010-14z"/></svg>
+                <input class="search-input" id="setSlug" style="height:40px" placeholder="mor-tilki" />
+              </div>
+            </div>
+            <div class="set-row">
+              <div><div class="set-name">sorgu aralığı</div><div class="set-sub">saniye · 5-120</div></div>
+              <input class="num-input set-field" id="setPoll" type="number" min="5" max="120" />
+            </div>
+            <div class="set-row">
+              <div><div class="set-name">kick.com'a doğrudan bağlan</div><div class="set-sub">site ucu düşerse yedek</div></div>
+              <label class="swtch"><input type="checkbox" id="setDirect" /><span class="track"><span class="knob"></span></span></label>
+            </div>
+            <div class="set-row">
+              <div><div class="set-name">geçmiş süresi</div><div class="set-sub">dakika · 30-1440</div></div>
+              <input class="num-input set-field" id="setHistory" type="number" min="30" max="1440" />
+            </div>
+          </div>
+
+          <div class="set-card glass">
+            <h2 class="h2">bildirimler</h2>
+            <div class="set-row"><div><div class="set-name">yayın açıldı/kapandı</div></div><label class="swtch"><input type="checkbox" id="setNotifyLive" /><span class="track"><span class="knob"></span></span></label></div>
+            <div class="set-row"><div><div class="set-name">yeni takipçi</div></div><label class="swtch"><input type="checkbox" id="setNotifyFollower" /><span class="track"><span class="knob"></span></span></label></div>
+            <div class="set-row"><div><div class="set-name">izleyici sıçraması</div></div><label class="swtch"><input type="checkbox" id="setNotifySpike" /><span class="track"><span class="knob"></span></span></label></div>
+            <div class="set-row"><div><div class="set-name">kurtarma uyarısı</div><div class="set-sub">veri gecikmesi çözülünce</div></div><label class="swtch"><input type="checkbox" id="setNotifyRecover" /><span class="track"><span class="knob"></span></span></label></div>
+            <div class="set-row">
+              <div><div class="set-name">sessiz saatler</div><div class="set-sub">saat 23–9 arası sus</div></div>
+              <label class="swtch"><input type="checkbox" id="setQuiet" /><span class="track"><span class="knob"></span></span></label>
+            </div>
+          </div>
+
+          <div class="set-card glass">
+            <h2 class="h2">pencere</h2>
+            <div class="set-row"><div><div class="set-name">her zaman üstte</div></div><label class="swtch"><input type="checkbox" id="setOnTop" /><span class="track"><span class="knob"></span></span></label></div>
+            <div class="set-row"><div><div class="set-name">tepsiye küçült</div><div class="set-sub">bazı sürümlerde ActiveX bildirimi çıkabilir</div></div><label class="swtch"><input type="checkbox" id="setTray" /><span class="track"><span class="knob"></span></span></label></div>
+            <div class="set-row"><div><div class="set-name">windows ile başla</div><div class="set-sub">oturum açılışında açılır</div></div><label class="swtch"><input type="checkbox" id="setAutoStart" /><span class="track"><span class="knob"></span></span></label></div>
+          </div>
+
+          <div class="set-card glass">
+            <h2 class="h2">oturum</h2>
+            <div class="row" id="authRow">
+              <span id="authState">oturum sorgulanıyor…</span>
+              <span class="grow"></span>
+              <button class="ghost-btn" id="btnLogout" style="display:none">çıkış</button>
+            </div>
+            <div class="mt12 set-sub">mesaj yazmak için artsık kick hesabı gerekir; token yalnızca bu bilgisayarda (DPAPI) saklanır.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-about">
+        <div class="about-card glass">
+          <div class="about-title">
+            <div class="about-mark">▶</div>
+            <div>
+              <div style="font-size:19px;font-weight:700">KickForge</div>
+              <div class="caption">mor tilki · tauri · tek tema</div>
+            </div>
+          </div>
+          <div class="muted" style="font-size:13px">
+            kanal yayınını izler: takipçi, izleyici ve sohbet; geçmişi tutup eğriyi çizer.
+            güncellemeyi sitendeki <b class="mono" style="color:var(--text)">/api/release</b> ucu kendiliğinden izler.
+          </div>
+          <div class="kv" id="aboutRelease">sürüm sorgulanıyor…</div>
+          <div class="row mt16">
+            <button class="gh-btn" id="btnGithub">
+              <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+              GitHub'da görüntüle
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- güncelleme tostu -->
+    <div class="update-toast" id="updateToast">
+      <div class="row">
+        <div class="mark">↥</div>
+        <div><b style="font-size:13px">güncelleme var</b></div>
+      </div>
+      <div class="note" id="updateNote"></div>
+      <div class="rowbtns">
+        <button class="upd-btn" id="btnUpdate">
+          İNDİR VE KUR
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l8 8h-5v8h-6v-8H4l8-8z"/></svg>
+        </button>
+        <button class="linkghost" id="btnUpdateLater">sonra</button>
+      </div>
+    </div>
+
+    <!-- alt dock -->
+    <div class="dock-wrap">
+      <div class="dock" id="dock">
+        <div class="dock-heen"></div>
+        <div class="dock-channel">
+          <img class="avatar" id="avatarImg" src="" alt="" />
+          <div style="min-width:0">
+            <div class="row">
+              <span class="dock-name" id="dockName">mor-tilki</span>
+              <span class="badge" id="verifiedChip" style="background:var(--accent);display:none">✓</span>
+            </div>
+            <div class="dock-meta" id="dockMeta">takipçiler yüklenıyor…</div>
+          </div>
+          <span class="chip" id="sideLive"><span class="dot" id="sideLiveDot"></span><span id="sideLiveText">yayın kapalı</span></span>
+        </div>
+        <div class="spacer"></div>
+        <div class="dock-tabs">
+          <button class="tab active" data-page="live">canlı</button>
+          <button class="tab" data-page="studio">yayın & sohbet</button>
+          <button class="tab" data-page="history">geçmiş</button>
+          <button class="tab" data-page="settings">ayarlar</button>
+          <button class="tab" data-page="about">hakkında</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- durum çubuğu -->
+    <div class="statusbar">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">bağlantı kuruluyor…</span>
+      <span class="spacer"></span>
+      <span id="statusHint"></span>
+      <span class="st-sep"></span>
+      <span id="versionText">sürüm 2.3.0 · tauri</span>
+      <button class="stlink" id="lnkSite">site</button>
+      <button class="stlink" id="lnkGithub">github</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
