@@ -310,6 +310,41 @@ async fn get_release(state: State<'_, AppState>) -> Result<Value, String> {
 // geçmiş (history.json): örnek listesi + eğri
 // ─────────────────────────────────────────────────────────────────────────────
 
+// beğeni/beğenmeme: sitendeki /api/rate ucu (vercel'de herkeste senkron)
+#[tauri::command]
+async fn rate_get(state: State<'_, AppState>, api_base: String) -> Result<Value, String> {
+    let url = format!("{}/api/rate", api_base.trim_end_matches('/'));
+    fetch_json(&state, &url, None, None).await
+}
+
+#[tauri::command]
+async fn rate_post(
+    state: State<'_, AppState>,
+    api_base: String,
+    likes: i64,
+    dislikes: i64,
+) -> Result<Value, String> {
+    let url = format!("{}/api/rate", api_base.trim_end_matches('/'));
+    let resp = state
+        .client
+        .post(&url)
+        .header("content-type", "application/json")
+        .body(json!({ "likes": likes, "dislikes": dislikes }).to_string())
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    let status = resp.status().as_u16();
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    if !(200..300).contains(&status) {
+        return Err(format!(
+            "rate ({}) · {}",
+            status,
+            text.chars().take(110).collect::<String>()
+        ));
+    }
+    serde_json::from_str::<Value>(&text).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn get_history() -> Result<Value, String> {
     let path = folder().join("history.json");
@@ -943,7 +978,9 @@ pub fn run() {
             start_login,
             send_chat,
             get_chat,
-            check_auth_fresh
+            check_auth_fresh,
+            rate_get,
+            rate_post
         ])
         .run(tauri::generate_context!())
         .expect("tauri çalışmadı");
