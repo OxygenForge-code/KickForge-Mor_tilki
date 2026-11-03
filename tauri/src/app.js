@@ -4,7 +4,7 @@ const curWin = window.__TAURI__.window.getCurrentWindow();
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "2.4.0";
+const APP_VERSION = "2.5.0";
 let S = {};                  // ayarlar
 let nulledNotif = false;     // toptan susturma
 let lastStats = null;
@@ -18,12 +18,44 @@ let chatSlugInfo = null;
 const isVal = (v) => v != null && v !== "";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+/* ═══════════ yayın oynatıcı ═══════════ */
+let playerOn = false;
+let playerAutoTried = false;
+
+function playerEnsure(on) {
+  playerOn = on;
+  const box = $("playerBox");
+  const frame = $("playerFrame");
+  box.classList.toggle("playing", on);
+  $("btnPlayerToggle").textContent = on ? "oynatıcıyı kapat" : "oynatıcıyı aç";
+  if (on) {
+    frame.src = "https://player.kick.com/" + (S.channelSlug || "mor-tilki");
+    if (frame.style.display !== "block") {
+      frame.style.display = "block";
+      $("playerStateText").textContent = "AÇIK";
+    }
+  } else {
+    frame.src = "about:blank";
+    setTimeout(() => { if (!playerOn) frame.style.display = "none"; }, 150);
+    $("playerStateText").textContent = "hazır";
+  }
+}
+
+$("btnPlayerToggle").addEventListener("click", () => playerEnsure(!playerOn));
+$("btnPlayerStart").addEventListener("click", () => playerEnsure(true));
+$("btnKickOpen").addEventListener("click", () => openUrl("https://kick.com/" + (S.channelSlug || "mor-tilki")));
+
 /* ═══════════ sekmeler ═══════════ */
 function show(page) {
   document.querySelectorAll(".page").forEach((p) => p.classList.toggle("active", p.id === "page-" + page));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.page === page));
   if (page === "studio") startChatLoop();
   if (page === "history") renderHistory();
+  // studio'ya ilk girişte oynatıcıyı kendiliğinden aç
+  if (page === "studio" && !playerOn && !playerAutoTried) {
+    playerAutoTried = true;
+    playerEnsure(true);
+  }
 }
 
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => show(t.dataset.page)));
@@ -416,7 +448,7 @@ async function schedulePoll() {
   pollTimer = setInterval(pollNow, ms);
 }
 
-$("btnWatch").addEventListener("click", () => openUrl("https://kick.com/" + (S.channelSlug || "mor-tilki")));
+$("btnWatch").addEventListener("click", () => { show("studio"); playerEnsure(true); });
 $("btnChatGo").addEventListener("click", () => { show("studio"); fetchChat(); });
 $("btnRefresh").addEventListener("click", () => pollNow(true));
 

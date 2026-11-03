@@ -101,6 +101,26 @@
       </section>
 
       <section class="page" id="page-studio">
+        <div class="studio-grid">
+        <div class="player-card glass">
+          <div class="row">
+            <h2 class="h2" style="margin:0">yayın</h2>
+            <span class="chip" id="playerState"><span class="dot" id="playerDot"></span><span id="playerStateText">hazır</span></span>
+            <span class="grow"></span>
+            <button class="ghost-btn" id="btnPlayerToggle" title="oynatıcıyı aç / kapat">oynatıcıyı kapat</button>
+            <button class="ghost-btn" id="btnKickOpen" title="kick.com'da aç">tarayıcıda aç</button>
+          </div>
+          <div class="player-frame" id="playerBox">
+            <div class="player-empty" id="playerEmpty">
+              <div class="row" style="flex-direction:column;gap:10px">
+                <div class="loader" id="playerLoader" style="display:none"></div>
+                <div class="muted" id="playerNote">yayın izlemek için oynatıcıyı aç</div>
+                <button class="ghost-btn" id="btnPlayerStart">▶ oynatıcıyı aç</button>
+              </div>
+            </div>
+            <iframe id="playerFrame" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="display:none"></iframe>
+          </div>
+        </div>
         <div class="chat-card glass">
           <div class="row">
             <h2 class="h2" style="margin:0">sohbet</h2>
@@ -126,6 +146,7 @@
             </button>
           </div>
           <div class="chat-note" id="chatNote"></div>
+        </div>
         </div>
       </section>
 
@@ -272,7 +293,7 @@
       <span class="spacer"></span>
       <span id="statusHint"></span>
       <span class="st-sep"></span>
-      <span id="versionText">sürüm 2.4.0 · tauri</span>
+      <span id="versionText">sürüm 2.5.0 · tauri</span>
       <button class="stlink" id="lnkSite">site</button>
       <button class="stlink" id="lnkGithub">github</button>
     </div>
