@@ -1101,3 +1101,164 @@ h2.h2::after {
     box-shadow: 114px -107px var(--accent), 212px -166px var(--accent2), 197px -6px rgba(238, 255, 180, 0.9), 179px -329px var(--accent-deep), -167px -262px var(--accent), 233px 66px var(--accent2), 81px 43px rgba(198, 242, 78, 0.8), -13px 55px var(--accent), -60px -183px var(--accent-deep), 127px -259px var(--accent2), 117px -122px var(--accent), 95px 21px rgba(220, 255, 150, 0.9), 115px 2px var(--accent-deep), -160px -328px var(--accent), 69px -242px var(--accent2), -208px -230px var(--accent), 30px -15px var(--accent2), 235px -15px var(--accent-deep), 80px -232px var(--accent), 175px -173px var(--accent2), -187px -176px rgba(200, 240, 110, 0.9), 4px 27px var(--accent-deep), 227px -106px var(--accent), 119px 18px var(--accent2), -102px 5px var(--accent-deep), -16px -4px var(--accent), -201px -310px var(--accent2), 64px -181px var(--accent), -234px -15px var(--accent2), -184px -263px var(--accent-deep), 96px -303px var(--accent), -139px 11px var(--accent2), 25px -205px var(--accent), -129px -322px var(--accent-deep), -235px -187px var(--accent), -136px -237px var(--accent2), -82px -321px var(--accent), 7px -267px var(--accent2), -155px 31px var(--accent-deep), -85px -73px var(--accent), 60px -199px var(--accent2), -9px -289px var(--accent-deep), -208px -167px var(--accent), -13px -299px var(--accent2), 179px -164px var(--accent), -112px 13px var(--accent-deep), -209px -125px var(--accent), 14px -101px var(--accent2), -184px -292px var(--accent), -26px -168px var(--accent-deep), 129px -67px var(--accent2), -17px -23px var(--accent), 129px 35px var(--accent-deep), 35px -24px var(--accent), -12px -297px var(--accent2), 129px -156px var(--accent-deep), 157px -29px var(--accent), -221px 7px var(--accent2), 0px -311px var(--accent), 155px 51px var(--accent-deep), -71px -318px var(--accent2), 0px 0 var(--accent);
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   İKİNCİ DALGA — aurora · gradient rakamlar · balon sohbet · sinema çerçeve
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* aurora: ağır conic ışık dalgası zemini süzülür */
+.ambient .a4 {
+  position: absolute; inset: -35%;
+  background: conic-gradient(from 180deg at 60% 40%,
+    rgba(198, 242, 78, 0.055), transparent 25%,
+    rgba(94, 158, 18, 0.05) 44%, transparent 60%,
+    rgba(198, 242, 78, 0.04) 78%, transparent 95%);
+  border-radius: 40%;
+  filter: blur(70px);
+  animation: aurora-spin 60s linear infinite;
+}
+@keyframes aurora-spin { to { transform: rotate(360deg) scale(1.06); } }
+
+/* hero: dönüşen aura + gradient dev rakam */
+.hero { padding: 24px; }
+.hero::before {
+  content: ""; position: absolute; right: -90px; top: -90px;
+  width: 300px; height: 300px;
+  background: conic-gradient(from 90deg, rgba(198, 242, 78, 0.22), transparent 30%, rgba(198, 242, 78, 0.09) 55%, transparent 75%, rgba(198, 242, 78, 0.22));
+  border-radius: 50%; filter: blur(46px);
+  animation: hero-aura 14s linear infinite;
+  pointer-events: none;
+}
+@keyframes hero-aura { to { transform: rotate(360deg); } }
+.hero-num {
+  font-size: 76px;
+  background: linear-gradient(100deg, var(--accent2) 0%, var(--accent) 40%, #9dd82b 75%, var(--accent2) 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 6px 22px rgba(198, 242, 78, 0.28));
+  animation: num-flow 6s ease-in-out infinite;
+}
+@keyframes num-flow { 0%, 100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
+.hero-sub { font-size: 13.5px; }
+
+/* istatistik kartları: ikon + büyük sayı + renk kimliği */
+.tiles .tile, .tile-row .tile { padding: 13px 12px; overflow: hidden; }
+.tiles .tile .metric, .tile-row .tile .metric {
+  font-size: 21px; letter-spacing: -0.02em; margin-top: 4px;
+}
+.tiles .tile .metric, .tile-row .tile .metric { font-family: var(--mono); }
+.tile::before {
+  position: absolute; right: 10px; top: 10px; font-size: 15px;
+  opacity: 0.6; filter: saturate(0.9);
+  transition: transform 0.3s var(--ease-spring), opacity 0.3s;
+}
+.tiles .tile:hover::before, .tile-row .tile:hover::before { transform: scale(1.35) rotate(-8deg); opacity: 1; }
+.tile:has(#mFollowers)::before { content: "👥"; }
+.tile:has(#mSession)::before { content: "🕓"; }
+.tile:has(#mSource)::before { content: "⚡"; }
+.tile:has(#mLatency)::before { content: "📡"; }
+.tile:has(#mChannelId)::before { content: "🆔"; }
+.tile:has(#mUpdated)::before { content: "🔄"; }
+
+/* dock: iç cam tüp + süzülen glöw göstergesi */
+.dock {
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(10, 12, 8, 0.6) 60%),
+    radial-gradient(120px 60px at 12% 50%, rgba(198, 242, 78, 0.08), transparent 75%);
+}
+.dock-tabs {
+  padding: 4px;
+  border-radius: 22px;
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+.dock-tabs::after {
+  content: ""; position: absolute; left: 0; top: 4px; height: calc(100% - 8px);
+  width: var(--ind-w, 70px); transform: translateX(calc(var(--ind-x, 0px) - var(--ind-w, 70px) / 2));
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(198, 242, 78, 0.2), rgba(198, 242, 78, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(198, 242, 78, 0.28), 0 4px 18px -4px rgba(198, 242, 78, 0.35);
+  transition: transform 0.4s var(--ease-spring), width 0.4s var(--ease-spring);
+  pointer-events: none;
+}
+.tab { z-index: 1; }
+.tab.active { background: transparent; box-shadow: none; }
+.tab.active::after { width: 0; box-shadow: none; }
+
+/* durum çubuğu: cam şerit */
+.statusbar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.02em;
+}
+
+/* sohbet: balon tasarım — kullanıcı kimlikli kenar + baş harf balonu */
+.chat-line {
+  position: relative;
+  padding: 8px 12px 8px 40px;
+  border-radius: 13px;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 5px;
+  transition: background 0.25s, border-color 0.25s, transform 0.2s;
+}
+.chat-line::before {
+  content: attr(data-u);
+  position: absolute; left: 8px; top: 9px;
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 800; color: #0d1006;
+  background: linear-gradient(135deg, var(--c, #c6f24e), color-mix(in srgb, var(--c, #c6f24e) 55%, #6b8f1a));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c, #c6f24e) 40%, transparent);
+}
+.chat-line:hover { background: linear-gradient(155deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)); border-color: rgba(255, 255, 255, 0.09); transform: translateX(2px); }
+.chat-msg { font-size: 13.2px; }
+
+/* oyuncu: sinema çerçevesi */
+.player-frame { border-radius: 14px; }
+.player-frame::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background:
+    radial-gradient(130% 110% at 50% 30%, transparent 62%, rgba(0, 0, 0, 0.42) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 14%, transparent 82%, rgba(0, 0, 0, 0.32));
+  border-radius: inherit;
+}
+.player-frame.playing::before {
+  content: ""; position: absolute; inset: -1px; z-index: 2;
+  border-radius: 15px;
+  border: 1px solid rgba(198, 242, 78, 0.35);
+  box-shadow: 0 0 30px -6px rgba(198, 242, 78, 0.4);
+  animation: frame-breathe 3.4s ease-in-out infinite;
+}
+@keyframes frame-breathe { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+/* neon kenarlı toast */
+.update-toast {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--glass3), var(--glass3)) padding-box,
+    conic-gradient(from 120deg, rgba(198, 242, 78, 0.75), rgba(46, 66, 10, 0.5), rgba(198, 242, 78, 0.35), rgba(198, 242, 78, 0.75)) border-box;
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.6), 0 0 40px -12px rgba(198, 242, 78, 0.35);
+}
+.update-toast.show { border-color: transparent; }
+
+/* beğeni popu: gradient ince çerçeve + daha yumuşak gölge */
+.rating-pop {
+  border-radius: 18px;
+  border: 1px solid rgba(198, 242, 78, 0.16);
+  box-shadow: 0 8px 34px rgba(0, 0, 0, 0.6), 0 0 44px -14px rgba(198, 242, 78, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ayarlar alan · mono değerler kireç vurgulu */
+.set-row .num-input { text-align: right; }
+.search-input { padding-right: 14px; }
+
+/* geçmiş satırı: zaman kireç nokta balonu ile */
+.hist-line { border-radius: 12px; }
+
+/* küçük ekranlar */
+@media (max-width: 980px) {
+  .hero-num { font-size: 60px; }
+}

@@ -4,7 +4,7 @@ const curWin = window.__TAURI__.window.getCurrentWindow();
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "2.7.0";
+const APP_VERSION = "2.7.1";
 let S = {};                  // ayarlar
 let nulledNotif = false;     // toptan susturma
 let lastStats = null;
@@ -53,6 +53,7 @@ $("btnKickOpen").addEventListener("click", () => openUrl("https://kick.com/" + (
 function show(page) {
   document.querySelectorAll(".page").forEach((p) => p.classList.toggle("active", p.id === "page-" + page));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.page === page));
+  moveDockInd();
   if (page === "studio") startChatLoop();
   if (page === "history") renderHistory();
   // studio'ya ilk girişte oynatıcıyı kendiliğinden aç
@@ -62,6 +63,29 @@ function show(page) {
   }
   updateMini();
 }
+
+// süzülen dock göstergesi: aktif sekmenin altına hap konumlanır
+function moveDockInd() {
+  const dockTabs = document.querySelector(".dock-tabs");
+  const active = document.querySelector(".tab.active");
+  if (dockTabs && active) {
+    // .tab'ın offsetParent'ı .dock; göstergé .dock koordinatında çalışır
+    const x = active.offsetLeft + active.offsetWidth / 2;
+    const w = active.offsetWidth;
+    const dx = dockTabs.style.getPropertyValue("--ind-x");
+    if (dx) { // ilk sefer yumuşak süzme, ilk konum ani değil
+      dockTabs.style.transition = "none";
+      void dockTabs.offsetWidth;
+      dockTabs.style.transition = "";
+    }
+    dockTabs.style.setProperty("--ind-x", x + "px");
+    dockTabs.style.setProperty("--ind-w", w + "px");
+    if (!dx && !dockTabs.dataset.init) {
+      dockTabs.dataset.init = "1";
+    }
+  }
+}
+window.addEventListener("resize", moveDockInd);
 
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => show(t.dataset.page)));
 
@@ -297,10 +321,23 @@ function drawSpark() {
   // alan
   ctx.lineTo(w - 4, h); ctx.lineTo(4, h); ctx.closePath();
   const g = ctx.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, "rgba(198,242,78,0.22)");
+  g.addColorStop(0, "rgba(198,242,78,0.26)");
   g.addColorStop(1, "rgba(198,242,78,0)");
   ctx.fillStyle = g;
   ctx.fill();
+
+  // son nokta ışıltısı (canlı nabız)
+  const last = recent[recent.length - 1];
+  if (last) {
+    const lx = w - 4, ly = h - 8 - (last.viewers / maxV) * (h - 20);
+    const ping = ctx.createRadialGradient(lx, ly, 0, lx, ly, 9);
+    ping.addColorStop(0, "rgba(198,242,78,0.85)");
+    ping.addColorStop(1, "rgba(198,242,78,0)");
+    ctx.fillStyle = ping;
+    ctx.beginPath(); ctx.arc(lx, ly, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#d9ff6e";
+    ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill();
+  }
 }
 
 /* ═══════════ geçmiş ═══════════ */
@@ -375,6 +412,8 @@ function appendChatLine(feed, m) {
     .join("");
   const div = document.createElement("div");
   div.className = "chat-line";
+  div.dataset.u = m.user.charAt(0).toUpperCase(); // balon başı harf
+  div.dataset.c = m.color;
   div.innerHTML =
     `<div>${badges}<span class="chat-user" style="color:${esc(m.color)}">${esc(m.user)}</span>${m.isBot ? '<span class="badge level" style="margin-left:5px">BOT</span>' : ""}</div>` +
     `<div class="chat-msg">${esc(m.content)}</div>`;
@@ -474,6 +513,7 @@ window.addEventListener("resize", drawSpark);
   await loadSettings();
   checkAuth();
   checkUpdate();
+  moveDockInd();
   await pollNow(true);
   schedulePoll();
 })();
