@@ -4,7 +4,7 @@ const curWin = window.__TAURI__.window.getCurrentWindow();
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "2.6.1";
+const APP_VERSION = "2.7.0";
 let S = {};                  // ayarlar
 let nulledNotif = false;     // toptan susturma
 let lastStats = null;
@@ -192,7 +192,11 @@ async function pollNow(first = false) {
     const live = !!st.isLive;
 
     // hero
-    $("viewerNum").textContent = viewers.toLocaleString("tr-TR");
+    const numEl = $("viewerNum");
+    numEl.textContent = viewers.toLocaleString("tr-TR");
+    numEl.classList.remove("bump");
+    void numEl.offsetWidth; // animasyonu yeniden tetikle
+    numEl.classList.add("bump");
     $("sessionTitle").textContent = st.sessionTitle || (live ? "başlık yok" : "yayın kapalı");
     $("heroFollowers").textContent = (Number(st.followersCount) || 0).toLocaleString("tr-TR");
     $("mFollowers").textContent = (Number(st.followersCount) || 0).toLocaleString("tr-TR");
