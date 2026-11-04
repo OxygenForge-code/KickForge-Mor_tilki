@@ -4,7 +4,7 @@ const curWin = window.__TAURI__.window.getCurrentWindow();
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "2.7.1";
+const APP_VERSION = "2.7.2";
 let S = {};                  // ayarlar
 let nulledNotif = false;     // toptan susturma
 let lastStats = null;
@@ -88,6 +88,19 @@ function moveDockInd() {
 window.addEventListener("resize", moveDockInd);
 
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => show(t.dataset.page)));
+
+/* ═══════════ klavye kısayolları ═══════════ */
+document.addEventListener("keydown", (e) => {
+  // yazı yazarken karışma: input odaklıysa sadece Escape davranır
+  if (e.target.closest("input, textarea")) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const pages = { "1": "live", "2": "studio", "3": "history", "4": "settings", "5": "about" };
+  const k = e.key.toLowerCase();
+  if (pages[e.key]) { show(pages[e.key]); return; }
+  if (k === "r") { pollNow(true); return; }
+  if (k === "m") { toggleNotif(); return; }
+  if (k === "p") { playerEnsure(!playerOn); return; }
+});
 
 /* ═══════════ pencere ═══════════ */
 $("btnMin").addEventListener("click", () => curWin.minimize());
@@ -414,6 +427,16 @@ function appendChatLine(feed, m) {
   div.className = "chat-line";
   div.dataset.u = m.user.charAt(0).toUpperCase(); // balon başı harf
   div.dataset.c = m.color;
+  // saat damgası: veri varsa sol üstte minitarih
+  if (m.t) {
+    try {
+      const d = new Date(Number(m.t) > 1e12 ? Number(m.t) : Number(m.t) * 1000);
+      if (!isNaN(d)) {
+        const saat = d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+        div.dataset.t = saat;
+      }
+    } catch {}
+  }
   div.innerHTML =
     `<div>${badges}<span class="chat-user" style="color:${esc(m.color)}">${esc(m.user)}</span>${m.isBot ? '<span class="badge level" style="margin-left:5px">BOT</span>' : ""}</div>` +
     `<div class="chat-msg">${esc(m.content)}</div>`;
