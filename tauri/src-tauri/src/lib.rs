@@ -1,7 +1,9 @@
 use serde_json::{json, Value};
 use std::path::PathBuf;
 use std::sync::Mutex;
+use tauri::Manager;
 use tauri::State;
+use tauri::tray::TrayIconBuilder;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 /// uygulama durumu: http istemcisi + kanal kimliği önbelleği
@@ -952,6 +954,15 @@ async fn check_auth_fresh(state: State<'_, AppState>, _api_base: String) -> Resu
 // koşu
 // ─────────────────────────────────────────────────────────────────────────────
 
+// çıkışa zorla: pencere kapanışı tepsiye gizlene hatta app tamamen sonlanır
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
+// koşu
+// ────────────────────────────────────────────────────────────────────
+
 pub fn run() {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(12))
@@ -965,6 +976,39 @@ pub fn run() {
         .manage(AppState {
             client,
             ids_cache: Mutex::new(std::collections::HashMap::new()),
+        })
+        .setup(|app| {
+            // tepsi: köşedeki ikondan göster/çıkış — pencere gizliyken yol
+            let goster = tauri::menu::MenuItem::with_id(app, "goster", "KickForge'u göster", true, None::<&str>)?;
+            let cikis = tauri::menu::MenuItem::with_id(app, "cikis", "Çıkış", true, None::<&str>)?;
+            let menu = tauri::menu::Menu::with_items(app, &[&goster, &cikis])?;
+            TrayIconBuilder::with_id("kickforge-tray")
+                .icon(app.default_window_icon().expect("ikon yok").clone())
+                .tooltip("KickForge · mor-tilki")
+                .menu(&menu)
+                .show_menu_on_left_click(true)
+                .on_tray_icon_event(|tray, event| {
+                    if let tauri::tray::TrayIconEvent::Click { .. } = event {
+                        if let Some(w) = tray.app_handle().get_webview_window("main") {
+                            let _ = w.show();
+                            let _ = w.unminimize();
+                            let _ = w.set_focus();
+                        }
+                    }
+                })
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "goster" => {
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.show();
+                            let _ = w.unminimize();
+                            let _ = w.set_focus();
+                        }
+                    }
+                    "cikis" => app.exit(0),
+                    _ => {}
+                })
+                .build(app)?;
+            Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             get_settings,
@@ -980,7 +1024,8 @@ pub fn run() {
             get_chat,
             check_auth_fresh,
             rate_get,
-            rate_post
+            rate_post,
+            quit_app
         ])
         .run(tauri::generate_context!())
         .expect("tauri çalışmadı");

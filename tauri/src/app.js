@@ -4,7 +4,7 @@ const curWin = window.__TAURI__.window.getCurrentWindow();
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "2.6.0";
+const APP_VERSION = "2.6.1";
 let S = {};                  // ayarlar
 let nulledNotif = false;     // toptan susturma
 let lastStats = null;
@@ -69,8 +69,18 @@ document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () 
 $("btnMin").addEventListener("click", () => curWin.minimize());
 $("btnMax").addEventListener("click", async () => (await curWin.isMaximized()) ? curWin.unmaximize() : curWin.toggleMaximize());
 $("btnClose").addEventListener("click", async () => {
-  if (S?.minimizeToTray === true) { curWin.hide(); return; }
-  curWin.close();
+  if (S?.minimizeToTray !== false) {
+    // pencereyi gizle, uygulama tepsi ikonunda arka planda çalışmaya devam eder
+    await curWin.hide();
+    const hint = $("statusHint");
+    if (hint) {
+      hint.textContent = "arka planda çalışıyor · tepsi ikonundan (KickForge) geri gel";
+      setTimeout(() => { hint.textContent = ""; }, 6000);
+    }
+    return;
+  }
+  // tepsiye küçültme kapalıysa gerçekten çık
+  await invoke("quit_app");
 });
 $("btnGear").addEventListener("click", () => show("settings"));
 $("btnPin").addEventListener("click", async () => {
@@ -508,7 +518,7 @@ document.querySelectorAll("#ctxMenu .item").forEach((li) => {
     }
     if (act === "mute") toggleNotif();
     if (act === "kick") openUrl("https://kick.com/" + (S.channelSlug || "mor-tilki"));
-    if (act === "quit") curWin.close();
+    if (act === "quit") await invoke("quit_app");
   });
 });
 
